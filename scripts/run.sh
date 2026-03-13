@@ -4,9 +4,10 @@ set -euo pipefail
 # source setup (paths, GPU rename)
 source /nethome/rhakim/projects/deepconf/scripts/setup.sh
 
-# activate conda environment
-source /nethome/rhakim/miniconda3/etc/profile.d/conda.sh
-conda activate deepconf-env
+# Activate conda environment
+cd /nethome/rhakim/miniconda3/bin
+source activate deepConfEnv
+cd $PROJECT_DIR
 
 # diagnostics
 echo "=== Diagnostics ==="

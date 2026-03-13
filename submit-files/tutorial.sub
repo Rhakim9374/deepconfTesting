@@ -23,6 +23,6 @@ request_CPUs            = 1
 request_memory          = 10G
 request_GPUs            = 1
 #requirements            = (GPUs_GlobalMemoryMb >= 16000)
-requirements		= (machine == "cl15lx.lsv.uni-saarland.de")
+requirements		= (machine == "cl17lx.lsv.uni-saarland.de")
 # && (machine == "cl17lx.lsv.uni-saarland.de")
 queue 1
