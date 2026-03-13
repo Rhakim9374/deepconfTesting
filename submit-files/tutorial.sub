@@ -1,0 +1,18 @@
+
+# HTCondor submit description file
+# Everything with a leading # is a comment
+universe                = vanilla
+# Replace this with the shared model path you were given.
+environment             = "MODEL_PATH=/path/to/shared/model;MODE=offline;BUDGET=4;QUESTION_INDEX=0;DATASET_PATH=/nethome/rhakim/projects/deepconf/data/test.jsonl"
+initialdir              = /nethome/rhakim
+executable              = /nethome/rhakim/projects/deepconf/scripts/run.sh
+output                  = /data/users/rhakim/logs/deepconf/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
+error                   = /data/users/rhakim/logs/deepconf/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).err
+log                     = /data/users/rhakim/logs/deepconf/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
+request_CPUs            = 1
+request_memory          = 10G
+request_GPUs            = 1
+#requirements            = (GPUs_GlobalMemoryMb >= 16000)
+requirements		= (machine == "cl15lx.lsv.uni-saarland.de")
+# && (machine == "cl17lx.lsv.uni-saarland.de")
+queue 1
