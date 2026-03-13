@@ -1,19 +1,4 @@
 #!/usr/bin/env bash
-
-# run setup
-#source /nethome/rhakim/projects/deepconf/scripts/setup.sh
-
-# run misc. stuff
-#nvidia-smi
-#echo $CUDA_VISIBLE_DEVICES
-#echo $HOSTNAME
-#which python
-#python -m pip list
-
-# run code
-#python $PROJECT_DIR/src/main.py
-
-################
 set -euo pipefail
 
 # source setup (paths, GPU rename)

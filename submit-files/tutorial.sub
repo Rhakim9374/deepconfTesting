@@ -1,8 +1,18 @@
+# HTCondor submit file for DeepConf
+# Usage: condor_submit /nethome/rhakim/projects/deepconf/submit-files/tutorial.sub
+#
+# Environment variables:
+#   MODEL_PATH      (required) path to HuggingFace model
+#   MODE            offline or online (default: offline)
+#   BUDGET          number of traces for offline mode (default: 4)
+#   QUESTION_INDEX  which question from dataset (default: 0)
+#   DATASET_PATH    path to JSONL dataset file
+#   WARMUP_TRACES   warmup traces for online mode
+#   TOTAL_BUDGET    total budget for online mode
+#   MAX_TOKENS      max generation tokens
+#   OUTPUT_PATH     where to write JSON output
 
-# HTCondor submit description file
-# Everything with a leading # is a comment
 universe                = vanilla
-# Replace this with the shared model path you were given.
 environment             = "MODEL_PATH=/path/to/shared/model;MODE=offline;BUDGET=4;QUESTION_INDEX=0;DATASET_PATH=/nethome/rhakim/projects/deepconf/data/test.jsonl"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconf/scripts/run.sh
