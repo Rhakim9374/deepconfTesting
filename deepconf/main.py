@@ -71,7 +71,7 @@ def output_to_dict(result: Any) -> Dict[str, Any]:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run DeepConf from the repository-local deepconf/main.py module.")
+    parser = argparse.ArgumentParser(description="Run DeepConf from the repository-local deepconfTesting/main.py module.")
     parser.add_argument("--model-path", required=True)
     parser.add_argument("--mode", choices=["offline", "online"], default="offline")
     parser.add_argument("--prompt", default=None)

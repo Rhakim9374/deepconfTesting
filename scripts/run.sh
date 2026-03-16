@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # source setup (paths, GPU rename)
-source /nethome/rhakim/projects/deepconf/scripts/setup.sh
+source /nethome/rhakim/projects/deepconfTesting/scripts/setup.sh
 
 # Activate conda environment
 cd /nethome/rhakim/miniconda3/bin
@@ -19,7 +19,7 @@ python --version
 echo "==================="
 
 # build command from environment variables
-CMD="python -m deepconf.main --model-path ${MODEL_PATH}"
+CMD="python -m deepconfTesting.main --model-path ${MODEL_PATH}"
 
 [ -n "${MODE:-}" ]            && CMD="$CMD --mode ${MODE}"
 [ -n "${DATASET_PATH:-}" ]    && CMD="$CMD --dataset-path ${DATASET_PATH}"

@@ -1,5 +1,5 @@
 # HTCondor submit file for DeepConf
-# Usage: condor_submit /nethome/rhakim/projects/deepconf/submit-files/tutorial.sub
+# Usage: condor_submit /nethome/rhakim/projects/deepconfTesting/submit-files/tutorial.sub
 #
 # Environment variables:
 #   MODEL_PATH      (required) path to HuggingFace model
@@ -13,12 +13,12 @@
 #   OUTPUT_PATH     where to write JSON output
 
 universe                = vanilla
-environment             = "MODEL_PATH=/path/to/shared/model;MODE=offline;BUDGET=4;QUESTION_INDEX=0;DATASET_PATH=/nethome/rhakim/projects/deepconf/data/test.jsonl"
+environment             = "MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218;MODE=offline;BUDGET=4;QUESTION_INDEX=0;DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/test.jsonl"
 initialdir              = /nethome/rhakim
-executable              = /nethome/rhakim/projects/deepconf/scripts/run.sh
-output                  = /data/users/rhakim/logs/deepconf/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
-error                   = /data/users/rhakim/logs/deepconf/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).err
-log                     = /data/users/rhakim/logs/deepconf/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
+executable              = /nethome/rhakim/projects/deepconfTesting/scripts/run.sh
+output                  = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
+error                   = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).err
+log                     = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
 request_CPUs            = 1
 request_memory          = 10G
 request_GPUs            = 1
