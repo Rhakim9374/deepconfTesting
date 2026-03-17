@@ -12,9 +12,14 @@
 #   MODEL_TYPE       model type for tokenizer (default: gpt)
 #   TEMPERATURE      sampling temperature (default: 1.0)
 #   WINDOW_SIZE      window size (default: 2048)
+#   RUN_ID           run identifier for output naming
+#   REASONING_EFFORT reasoning effort level (e.g. low, medium, high)
+#   TOP_P            nucleus sampling top-p (default: 1.0)
+#   TOP_K            top-k sampling (default: -1, disabled)
+#   NO_MULTIPLE_VOTING  set to any value to disable multiple voting
 
 universe                = vanilla
-environment             = "MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218 BUDGET=16 QUESTION_INDEX=0 DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl TENSOR_PARALLEL=1 MAX_TOKENS=2048 OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/outputs"
+environment             = "MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218 BUDGET=16 QUESTION_INDEX=0 DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl TENSOR_PARALLEL=1 MAX_TOKENS=2048 OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/outputs WINDOW_SIZE=2048 TOP_P=1.0 TOP_K=-1"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconfTesting/scripts/run.sh
 output                  = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out

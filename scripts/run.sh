@@ -29,6 +29,11 @@ CMD="python ${PROJECT_DIR}/examples/example_offline.py --model ${MODEL_PATH} --q
 [ -n "${MODEL_TYPE:-}" ]          && CMD="$CMD --model_type ${MODEL_TYPE}"
 [ -n "${TEMPERATURE:-}" ]         && CMD="$CMD --temperature ${TEMPERATURE}"
 [ -n "${WINDOW_SIZE:-}" ]         && CMD="$CMD --window_size ${WINDOW_SIZE}"
+[ -n "${RUN_ID:-}" ]              && CMD="$CMD --rid ${RUN_ID}"
+[ -n "${REASONING_EFFORT:-}" ]    && CMD="$CMD --reasoning_effort ${REASONING_EFFORT}"
+[ -n "${TOP_P:-}" ]               && CMD="$CMD --top_p ${TOP_P}"
+[ -n "${TOP_K:-}" ]               && CMD="$CMD --top_k ${TOP_K}"
+[ -n "${NO_MULTIPLE_VOTING:-}" ]  && CMD="$CMD --no_multiple_voting"
 
 echo "Running: $CMD"
 eval $CMD
