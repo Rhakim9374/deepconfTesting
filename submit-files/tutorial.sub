@@ -14,7 +14,7 @@
 #   WINDOW_SIZE      window size (default: 2048)
 
 universe                = vanilla
-environment             = "MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218;BUDGET=16;QUESTION_INDEX=0;DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl;TENSOR_PARALLEL=1;MAX_TOKENS=2048;OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/outputs"
+environment             = "MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218 BUDGET=16 QUESTION_INDEX=0 DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl TENSOR_PARALLEL=1 MAX_TOKENS=2048 OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/outputs"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconfTesting/scripts/run.sh
 output                  = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
