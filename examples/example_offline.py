@@ -12,6 +12,7 @@ from datetime import datetime
 from vllm import SamplingParams
 from deepconfTesting import DeepThinkLLM
 from dynasor.core.evaluator import math_equal
+from deepconfTesting.utils import extract_answer
 
 # ============= PROMPT PREPARATION FUNCTIONS =============
 
@@ -83,11 +84,13 @@ def equal_func(answer: str, ground_truth: str) -> bool:
 def evaluate_voting_results(voting_results, ground_truth):
     """Evaluate voting results against ground truth"""
     evaluation = {}
+
+    extracted_gt = extract_answer(ground_truth) or ground_truth
     
     for method, result in voting_results.items():
         if result and result.get('answer'):
             try:
-                is_correct = equal_func(result['answer'], ground_truth)
+                is_correct = equal_func(result['answer'], extracted_gt)
             except:
                 is_correct = str(result['answer']) == str(ground_truth)
             
