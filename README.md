@@ -44,7 +44,7 @@ uv pip install -r requirements.txt
 ### Basic Usage
 
 ```python
-from deepconf import DeepThinkLLM
+from deepconfTesting import DeepThinkLLM
 
 # Initialize model
 deep_llm = DeepThinkLLM(model="deepseek-ai/DeepSeek-R1-0528-Qwen3-8B")

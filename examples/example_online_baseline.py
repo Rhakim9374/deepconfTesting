@@ -11,7 +11,7 @@ import pickle
 import argparse
 from datetime import datetime
 from vllm import SamplingParams
-from deepconf import DeepThinkLLM
+from deepconfTesting import DeepThinkLLM
 from dynasor.core.evaluator import math_equal
 import time
 

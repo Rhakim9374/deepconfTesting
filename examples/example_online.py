@@ -9,7 +9,7 @@ import json
 import pickle
 import argparse
 from datetime import datetime
-from deepconf import DeepThinkLLM
+from deepconfTesting import DeepThinkLLM
 from vllm import SamplingParams
 import time 
 from dynasor.core.evaluator import math_equal

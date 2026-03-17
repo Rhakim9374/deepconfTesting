@@ -99,7 +99,7 @@ print(f"Converted {len(dataset)} examples to aime_2025.jsonl")
 
 - Python 3.10+
 - [`vllm`](https://github.com/vllm-project/vllm)
-- `deepconf` (DeepThinkLLM)
+- `deepconfTesting` (DeepThinkLLM)
 - `dynasor` (for `math_equal`)
 - `pandas`, `numpy`, `tqdm`
 
