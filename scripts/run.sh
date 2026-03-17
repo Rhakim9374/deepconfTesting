@@ -19,16 +19,16 @@ python --version
 echo "==================="
 
 # build command from environment variables
-CMD="python -m deepconfTesting.main --model-path ${MODEL_PATH}"
+CMD="python ${PROJECT_DIR}/examples/example_offline.py --model ${MODEL_PATH} --qid ${QUESTION_INDEX:-0}"
 
-[ -n "${MODE:-}" ]            && CMD="$CMD --mode ${MODE}"
-[ -n "${DATASET_PATH:-}" ]    && CMD="$CMD --dataset-path ${DATASET_PATH}"
-[ -n "${BUDGET:-}" ]          && CMD="$CMD --budget ${BUDGET}"
-[ -n "${QUESTION_INDEX:-}" ]  && CMD="$CMD --question-index ${QUESTION_INDEX}"
-[ -n "${WARMUP_TRACES:-}" ]   && CMD="$CMD --warmup-traces ${WARMUP_TRACES}"
-[ -n "${TOTAL_BUDGET:-}" ]    && CMD="$CMD --total-budget ${TOTAL_BUDGET}"
-[ -n "${MAX_TOKENS:-}" ]      && CMD="$CMD --max-tokens ${MAX_TOKENS}"
-[ -n "${OUTPUT_PATH:-}" ]     && CMD="$CMD --output-path ${OUTPUT_PATH}"
+[ -n "${DATASET_PATH:-}" ]        && CMD="$CMD --dataset ${DATASET_PATH}"
+[ -n "${BUDGET:-}" ]              && CMD="$CMD --budget ${BUDGET}"
+[ -n "${MAX_TOKENS:-}" ]          && CMD="$CMD --max_tokens ${MAX_TOKENS}"
+[ -n "${OUTPUT_DIR:-}" ]          && CMD="$CMD --output_dir ${OUTPUT_DIR}"
+[ -n "${TENSOR_PARALLEL:-}" ]     && CMD="$CMD --tensor_parallel_size ${TENSOR_PARALLEL}"
+[ -n "${MODEL_TYPE:-}" ]          && CMD="$CMD --model_type ${MODEL_TYPE}"
+[ -n "${TEMPERATURE:-}" ]         && CMD="$CMD --temperature ${TEMPERATURE}"
+[ -n "${WINDOW_SIZE:-}" ]         && CMD="$CMD --window_size ${WINDOW_SIZE}"
 
 echo "Running: $CMD"
 eval $CMD

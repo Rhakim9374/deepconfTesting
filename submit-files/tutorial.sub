@@ -2,18 +2,19 @@
 # Usage: condor_submit /nethome/rhakim/projects/deepconfTesting/submit-files/tutorial.sub
 #
 # Environment variables:
-#   MODEL_PATH      (required) path to HuggingFace model
-#   MODE            offline or online (default: offline)
-#   BUDGET          number of traces for offline mode (default: 4)
-#   QUESTION_INDEX  which question from dataset (default: 0)
-#   DATASET_PATH    path to JSONL dataset file
-#   WARMUP_TRACES   warmup traces for online mode
-#   TOTAL_BUDGET    total budget for online mode
-#   MAX_TOKENS      max generation tokens
-#   OUTPUT_PATH     where to write JSON output
+#   MODEL_PATH       (required) path to HuggingFace model
+#   BUDGET           number of traces (default: 4)
+#   QUESTION_INDEX   which question from dataset (default: 0)
+#   DATASET_PATH     path to JSONL dataset file
+#   MAX_TOKENS       max generation tokens
+#   OUTPUT_DIR       where to write .pkl output
+#   TENSOR_PARALLEL  tensor parallel size (default: 1)
+#   MODEL_TYPE       model type for tokenizer (default: gpt)
+#   TEMPERATURE      sampling temperature (default: 1.0)
+#   WINDOW_SIZE      window size (default: 2048)
 
 universe                = vanilla
-environment             = "MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218;MODE=offline;BUDGET=4;QUESTION_INDEX=0;DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl"
+environment             = "MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218;BUDGET=4;QUESTION_INDEX=0;DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl;TENSOR_PARALLEL=1;MAX_TOKENS=2048;OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/outputs"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconfTesting/scripts/run.sh
 output                  = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
