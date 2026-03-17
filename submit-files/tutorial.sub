@@ -13,7 +13,7 @@
 #   OUTPUT_PATH     where to write JSON output
 
 universe                = vanilla
-environment             = "MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218;MODE=offline;BUDGET=4;QUESTION_INDEX=0;DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/test.jsonl"
+environment             = "MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218;MODE=offline;BUDGET=4;QUESTION_INDEX=0;DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconfTesting/scripts/run.sh
 output                  = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
