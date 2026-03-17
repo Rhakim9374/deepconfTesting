@@ -232,7 +232,6 @@ def main():
     
     # Create custom sampling parameters
     sampling_params = SamplingParams(
-        n=args.budget,
         temperature=args.temperature,
         top_p=args.top_p,
         top_k=args.top_k,

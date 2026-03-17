@@ -192,7 +192,8 @@ class DeepThinkLLM:
         warmup_params_list = []
         base_seed = time.time_ns()
         for param_id in range(warmup_traces):
-            warmup_params = copy.deepcopy(sampling_params) 
+            warmup_params = copy.deepcopy(sampling_params)
+            warmup_params.n = 1
             warmup_params.logprobs = 20
             warmup_params.seed = base_seed + param_id
             warmup_params_list.append(warmup_params)
@@ -222,7 +223,8 @@ class DeepThinkLLM:
 
         final_params_list = []
         for param_id in range(total_budget - warmup_traces):
-            final_params = copy.deepcopy(sampling_params) 
+            final_params = copy.deepcopy(sampling_params)
+            final_params.n = 1
             final_params.logprobs = 20
             final_params.seed = base_seed + param_id + warmup_traces
             final_params.extra_args = {
@@ -275,7 +277,8 @@ class DeepThinkLLM:
         sampling_params_list = []
         base_seed = time.time_ns()
         for param_id in range(budget):
-            sampling_params_x = copy.deepcopy(sampling_params) 
+            sampling_params_x = copy.deepcopy(sampling_params)
+            sampling_params_x.n = 1
             sampling_params_x.logprobs = 20
             sampling_params_x.seed = base_seed + param_id
             sampling_params_list.append(sampling_params_x)

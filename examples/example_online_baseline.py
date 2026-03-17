@@ -206,6 +206,8 @@ def main():
                        help='Top-k sampling parameter')
     parser.add_argument('--output_dir', type=str, default="outputs",
                        help='Output directory for results')
+    parser.add_argument('--reasoning_effort', type=str, default="high",
+                       help='Reasoning effort for GPT models')
     parser.add_argument('--no_multiple_voting', action='store_true',
                        help='Disable multiple voting analysis')
     
