@@ -6,8 +6,8 @@
 #   QUESTION_INDEX          which question from dataset (default: 0)
 #   DATASET_PATH            path to JSONL dataset file (default: aime25.jsonl)
 #   WARMUP_TRACES           number of warmup traces before confidence kicks in (default: 16)
-#   TOTAL_BUDGET            max total traces to generate (default: 256)
-#   CONFIDENCE_PERCENTILE   confidence percentile threshold for early exit (default: 10)
+#   TOTAL_BUDGET            max total traces to generate - including WARMUP_TRACES (default: 256)
+#   CONFIDENCE_PERCENTILE   confidence percentile threshold for early exit - 10 means keep the top 10% (default: 10)
 #   MAX_TOKENS              max generation tokens (default: 130000)
 #   OUTPUT_DIR              where to write .pkl output (default: outputs)
 #   TENSOR_PARALLEL         tensor parallel size (default: 1)
@@ -21,7 +21,7 @@
 #   NO_MULTIPLE_VOTING      set to any value to disable multiple voting analysis
 
 universe                = vanilla
-environment             = "TENSOR_PARALLEL=1 MAX_TOKENS=32768 WARMUP_TRACES=16 TOTAL_BUDGET=64 CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=1024 TOP_P=0.7 TOP_K=-1 QUESTION_INDEX=0 MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218 DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/outputs"
+environment             = "TENSOR_PARALLEL=1 MAX_TOKENS=32000 WARMUP_TRACES=16 TOTAL_BUDGET=48 CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=1024 TOP_P=0.7 QUESTION_INDEX=0 MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218 DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/outputs"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconfTesting/scripts/online_run.sh
 output                  = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
