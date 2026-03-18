@@ -117,10 +117,13 @@ def evaluate_voting_results(voting_results, ground_truth):
 def evaluate_confidence_methods(result, ground_truth):
     """Evaluate different confidence-based methods"""
     confidence_evaluation = {}
-    
+
     if result.mode != "online":
         return confidence_evaluation
-    
+
+    # Extract answer from ground truth (e.g., "\boxed{204}" → "204")
+    extracted_gt = extract_answer(ground_truth) or ground_truth
+
     # Evaluate warmup traces by confidence threshold
     if result.warmup_traces and result.conf_bar is not None:
         warmup_above_threshold = [
@@ -129,8 +132,8 @@ def evaluate_confidence_methods(result, ground_truth):
         ]
         
         if warmup_above_threshold:
-            correct_above = sum(1 for trace in warmup_above_threshold 
-                              if equal_func(trace['extracted_answer'], ground_truth))
+            correct_above = sum(1 for trace in warmup_above_threshold
+                              if equal_func(trace['extracted_answer'], extracted_gt))
             confidence_evaluation['warmup_above_threshold'] = {
                 'total': len(warmup_above_threshold),
                 'correct': correct_above,
@@ -146,8 +149,8 @@ def evaluate_confidence_methods(result, ground_truth):
         ]
         
         if final_completed:
-            correct_final = sum(1 for trace in final_completed 
-                              if equal_func(trace['extracted_answer'], ground_truth))
+            correct_final = sum(1 for trace in final_completed
+                              if equal_func(trace['extracted_answer'], extracted_gt))
             confidence_evaluation['final_completed'] = {
                 'total': len(final_completed),
                 'correct': correct_final,
@@ -161,8 +164,8 @@ def evaluate_confidence_methods(result, ground_truth):
         ]
         
         if early_stopped:
-            correct_stopped = sum(1 for trace in early_stopped 
-                                if equal_func(trace['extracted_answer'], ground_truth))
+            correct_stopped = sum(1 for trace in early_stopped
+                                if equal_func(trace['extracted_answer'], extracted_gt))
             confidence_evaluation['early_stopped'] = {
                 'total': len(early_stopped),
                 'correct': correct_stopped,
@@ -198,9 +201,10 @@ def print_evaluation_report(question, ground_truth, evaluation, confidence_eval,
             print(f"{method_name:<20} {total:<8} {correct:<8} {accuracy:<10.1%}")
     
     # Count individual trace accuracy
-    correct_traces = sum(1 for trace in result.all_voting_traces 
-                        if trace.get('extracted_answer') and 
-                        equal_func(trace['extracted_answer'], ground_truth))
+    extracted_gt = extract_answer(ground_truth) or ground_truth
+    correct_traces = sum(1 for trace in result.all_voting_traces
+                        if trace.get('extracted_answer') and
+                        equal_func(trace['extracted_answer'], extracted_gt))
     total_valid_traces = sum(1 for trace in result.all_voting_traces if trace.get('extracted_answer'))
     
     if total_valid_traces > 0:
