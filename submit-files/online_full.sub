@@ -24,7 +24,7 @@
 #   NO_MULTIPLE_VOTING      set to any value to disable multiple voting
 
 universe                = vanilla
-environment             = "RUN_ID=$(Process) TENSOR_PARALLEL=1 MAX_TOKENS=32000 WARMUP_TRACES=16 TOTAL_BUDGET=32 CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=2048 TOP_P=0.95 TEMPERATURE=0.7 MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218 DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/outputs"
+environment             = "RUN_ID=$(Process) QID_END=10 TENSOR_PARALLEL=1 MAX_TOKENS=32000 WARMUP_TRACES=16 TOTAL_BUDGET=32 CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=2048 TOP_P=0.95 TEMPERATURE=0.7 MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218 DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/outputs"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconfTesting/scripts/online_full_run.sh
 output                  = /data/users/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out

@@ -260,8 +260,8 @@ def analyze_voting_methods(results: List[Dict]) -> Dict:
                 'total': stats['total'],
                 'avg_confidence': np.mean([a['confidence'] for a in stats['answers'] 
                                           if a['confidence'] is not None]) 
-                                 if any(a['confidence'] for a in stats['answers']) else None,
-                'num_votes' : stats['num_votes'] # np.mean(stats['num_votes']),
+                                 if any(a['confidence'] is not None for a in stats['answers']) else None,
+                'num_votes' : np.mean(stats['num_votes']),
             }
     
     return method_accuracy

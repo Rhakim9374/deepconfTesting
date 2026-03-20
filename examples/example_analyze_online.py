@@ -187,7 +187,7 @@ def analyze_timing_details(results: List[Dict]) -> Dict:
         final_tokens = token_stats.get('final_tokens', 0)
         
         # Overall throughput
-        total_gen_time = warmup_gen + final_gen + timing_stats.get('generation_time', 0)
+        total_gen_time = warmup_gen + final_gen
         if total_gen_time > 0 and total_tokens > 0:
             derived_metrics['throughput_tokens_per_sec'].append(total_tokens / total_gen_time)
         else:
@@ -259,7 +259,7 @@ def analyze_voting_methods(results: List[Dict]) -> Dict:
                 'total': stats['total'],
                 'avg_confidence': np.mean([a['confidence'] for a in stats['answers'] 
                                           if a['confidence'] is not None]) 
-                                 if any(a['confidence'] for a in stats['answers']) else None,
+                                 if any(a['confidence'] is not None for a in stats['answers']) else None,
                 'num_votes' : np.mean(stats['num_votes']),
             }
     

@@ -17,18 +17,20 @@ from deepconfTesting.utils import extract_answer
 
 # ============= PROMPT PREPARATION FUNCTIONS =============
 
+ANSWER_INSTRUCTION = "\nPlease reason step by step, and put your final answer within \\boxed{}."
+
 def prepare_prompt(question: str, tokenizer, model_type: str = "deepseek") -> str:
     """Prepare prompt for a single question"""
     if model_type == "deepseek":
         # Format prompt using chat template for DeepSeek
         messages = [
             {"role": "system", "content": "该助手为DeepSeek-R1，由深度求索公司创造。\n今天是2025年5月28日，星期一。\n"},
-            {"role": "user", "content": question}
+            {"role": "user", "content": question + ANSWER_INSTRUCTION}
         ]
     else:
         # Format for GPT-like models
         messages = [
-            {"role": "user", "content": question}
+            {"role": "user", "content": question + ANSWER_INSTRUCTION}
         ]
     
     full_prompt = tokenizer.apply_chat_template(
@@ -43,9 +45,9 @@ def prepare_prompt(question: str, tokenizer, model_type: str = "deepseek") -> st
 def prepare_prompt_gpt(question: str, tokenizer, reasoning_effort: str = "high") -> str:
     """Prepare prompt for GPT models with reasoning effort"""
     messages = [
-        {"role": "user", "content": question}
+        {"role": "user", "content": question + ANSWER_INSTRUCTION}
     ]
-    
+
     full_prompt = tokenizer.apply_chat_template(
         messages,
         tokenize=False,
