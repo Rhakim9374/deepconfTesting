@@ -30,8 +30,8 @@ executable              = /nethome/rhakim/projects/deepconfTesting/scripts/onlin
 output                  = /data/users/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
 error                   = /data/users/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).err
 log                     = /data/users/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
-request_CPUs            = 1
-request_memory          = 60G
+request_CPUs            = 4
+request_memory          = 40G
 request_GPUs            = 2
 requirements            = (machine == "cl18lx.lsv.uni-saarland.de")
 queue 5
