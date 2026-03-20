@@ -158,7 +158,23 @@ def evaluate_confidence_methods(result, ground_truth):
                 'correct': correct_final,
                 'accuracy': correct_final / len(final_completed)
             }
-        
+
+        # Final completed excluding max tokens hit
+        final_completed_notmaxtokenshit = [
+            trace for trace in result.final_traces
+            if trace.get('stop_reason') not in ('gconf_threshold', 'length')
+            and trace.get('extracted_answer')
+        ]
+
+        if final_completed_notmaxtokenshit:
+            correct_notmax = sum(1 for trace in final_completed_notmaxtokenshit
+                               if equal_func(trace['extracted_answer'], extracted_gt))
+            confidence_evaluation['final_completed_notmaxtokenshit'] = {
+                'total': len(final_completed_notmaxtokenshit),
+                'correct': correct_notmax,
+                'accuracy': correct_notmax / len(final_completed_notmaxtokenshit)
+            }
+
         # Early stopped traces
         early_stopped = [
             trace for trace in result.final_traces 
