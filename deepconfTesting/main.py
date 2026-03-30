@@ -99,7 +99,7 @@ def main() -> None:
         top_p=args.top_p,
         top_k=args.top_k,
         max_tokens=args.max_tokens,
-        logprobs=20,
+        logprobs=20, # back to 20 default
     )
 
     os.makedirs(args.output_dir, exist_ok=True)
