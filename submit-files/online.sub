@@ -12,6 +12,7 @@
 #   OUTPUT_DIR              where to write .pkl output (default: outputs)
 #   TENSOR_PARALLEL         tensor parallel size (default: 1)
 #   MODEL_TYPE              model type for prompt formatting: gpt, deepseek (default: gpt)
+#   DATASET_TYPE            dataset answer style: math, mcqa (default: math). Set to mcqa for GPQA-style MC datasets.
 #   TEMPERATURE             sampling temperature (default: 1.0)
 #   TOP_P                   nucleus sampling top-p (default: 1.0)
 #   TOP_K                   top-k sampling (default: 40)

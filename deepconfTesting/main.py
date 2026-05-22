@@ -17,6 +17,7 @@ from vllm import SamplingParams
 
 from .wrapper import DeepThinkLLM
 from examples.example_online import (
+    DATASET_TYPES,
     prepare_prompt,
     prepare_prompt_gpt,
     equal_func,
@@ -47,6 +48,13 @@ def parse_args() -> argparse.Namespace:
         default="deepseek",
         choices=["deepseek", "gpt"],
     )
+    parser.add_argument(
+        "--dataset_type",
+        type=str,
+        default="math",
+        choices=list(DATASET_TYPES),
+        help="Dataset answer style: math (free-answer, \\boxed{} extracted) or mcqa (e.g. GPQA, single letter A-D)",
+    )
     parser.add_argument("--temperature", type=float, default=0.6)
     parser.add_argument("--top_p", type=float, default=0.95)
     parser.add_argument("--top_k", type=int, default=0)
@@ -75,7 +83,7 @@ def main() -> None:
     print(f"Loading dataset from {args.dataset}...")
     with open(args.dataset, "r", encoding="utf-8") as f:
         data = [json.loads(line.strip()) for line in f if line.strip()]
-    print(f"Dataset contains {len(data)} questions.")
+    print(f"Dataset contains {len(data)} questions. dataset_type={args.dataset_type}, model_type={args.model_type}")
 
     qid_start = args.qid_start if args.qid_start is not None else 0
     qid_end = args.qid_end if args.qid_end is not None else len(data)
@@ -122,9 +130,11 @@ def main() -> None:
 
         # Prepare prompt (same logic as example_online.py)
         if args.model_type == "gpt":
-            prompt = prepare_prompt_gpt(question, deep_llm.tokenizer)
+            prompt = prepare_prompt_gpt(question, deep_llm.tokenizer,
+                                         dataset_type=args.dataset_type)
         else:
-            prompt = prepare_prompt(question, deep_llm.tokenizer, args.model_type)
+            prompt = prepare_prompt(question, deep_llm.tokenizer, args.model_type,
+                                     dataset_type=args.dataset_type)
 
         # Run online deep thinking
         q_start = time.time()
@@ -162,6 +172,7 @@ def main() -> None:
                 "ground_truth": ground_truth,
                 "qid": qid,
                 "run_id": args.run_id,
+                "dataset_type": args.dataset_type,
                 "evaluation": evaluation,
                 "confidence_evaluation": confidence_eval,
             }
@@ -235,6 +246,7 @@ def main() -> None:
         "run_id": args.run_id,
         "model": args.model,
         "dataset": args.dataset,
+        "dataset_type": args.dataset_type,
         "qid_start": qid_start,
         "qid_end": qid_end,
         "n_questions": n_questions,

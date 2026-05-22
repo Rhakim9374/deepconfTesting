@@ -27,6 +27,7 @@ CMD="python ${PROJECT_DIR}/examples/example_offline.py --model ${MODEL_PATH} --q
 [ -n "${OUTPUT_DIR:-}" ]          && CMD="$CMD --output_dir ${OUTPUT_DIR}"
 [ -n "${TENSOR_PARALLEL:-}" ]     && CMD="$CMD --tensor_parallel_size ${TENSOR_PARALLEL}"
 [ -n "${MODEL_TYPE:-}" ]          && CMD="$CMD --model_type ${MODEL_TYPE}"
+[ -n "${DATASET_TYPE:-}" ]        && CMD="$CMD --dataset_type ${DATASET_TYPE}"
 [ -n "${TEMPERATURE:-}" ]         && CMD="$CMD --temperature ${TEMPERATURE}"
 [ -n "${WINDOW_SIZE:-}" ]         && CMD="$CMD --window_size ${WINDOW_SIZE}"
 [ -n "${RUN_ID:-}" ]              && CMD="$CMD --rid ${RUN_ID}"

@@ -16,42 +16,57 @@ from deepconfTesting.utils import extract_answer
 
 # ============= PROMPT PREPARATION FUNCTIONS =============
 
-def prepare_prompt(question: str, tokenizer, model_type: str = "deepseek") -> str:
+# Mirrors example_online.py. Offline mode historically did not append an answer
+# instruction; we keep that behavior for math (default) by mapping "math" to the
+# empty string, but expose dataset_type so an mcqa run can opt into the same
+# \boxed{} reinforcement the online path uses.
+DATASET_TYPES = ("math", "mcqa")
+ANSWER_INSTRUCTIONS = {
+    "math": "",
+    "mcqa": "\nPlease reason step by step, and put your final answer within \\boxed{}.",
+}
+
+
+def prepare_prompt(question: str, tokenizer, model_type: str = "deepseek",
+                   dataset_type: str = "math") -> str:
     """Prepare prompt for a single question"""
+    answer_instruction = ANSWER_INSTRUCTIONS[dataset_type]
     if model_type == "deepseek":
         # Format prompt using chat template for DeepSeek
         messages = [
             {"role": "system", "content": "该助手为DeepSeek-R1，由深度求索公司创造。\n今天是2025年5月28日，星期一。\n"},
-            {"role": "user", "content": question}
+            {"role": "user", "content": question + answer_instruction}
         ]
     else:
         # Format for GPT-like models
         messages = [
-            {"role": "user", "content": question}
+            {"role": "user", "content": question + answer_instruction}
         ]
-    
+
     full_prompt = tokenizer.apply_chat_template(
         messages,
         tokenize=False,
         add_generation_prompt=True
     )
-    
+
     return full_prompt
 
 
-def prepare_prompt_gpt(question: str, tokenizer, reasoning_effort: str = "high") -> str:
+def prepare_prompt_gpt(question: str, tokenizer, reasoning_effort: str = "high",
+                       dataset_type: str = "math") -> str:
     """Prepare prompt for GPT models with reasoning effort"""
+    answer_instruction = ANSWER_INSTRUCTIONS[dataset_type]
     messages = [
-        {"role": "user", "content": question}
+        {"role": "user", "content": question + answer_instruction}
     ]
-    
+
     full_prompt = tokenizer.apply_chat_template(
         messages,
         tokenize=False,
         reasoning_effort=reasoning_effort,
         add_generation_prompt=True
     )
-    
+
     return full_prompt
 
 
@@ -190,6 +205,8 @@ def main():
                        help='Maximum tokens per generation')
     parser.add_argument('--model_type', type=str, default="gpt", choices=["deepseek", "gpt"],
                        help='Model type for prompt formatting')
+    parser.add_argument('--dataset_type', type=str, default="math", choices=list(DATASET_TYPES),
+                       help='Dataset answer style: math (free-answer) or mcqa (e.g. GPQA, single letter A-D)')
     parser.add_argument('--reasoning_effort', type=str, default="high",
                        help='Reasoning effort for GPT models')
     parser.add_argument('--temperature', type=float, default=1.0,
@@ -224,11 +241,13 @@ def main():
     deep_llm = DeepThinkLLM(model=args.model, tensor_parallel_size=args.tensor_parallel_size, enable_prefix_caching=True)
     
     # Prepare prompt
-    print("Preparing prompt...")
+    print(f"Preparing prompt (model_type={args.model_type}, dataset_type={args.dataset_type})...")
     if args.model_type == "gpt":
-        prompt = prepare_prompt_gpt(question, deep_llm.tokenizer, args.reasoning_effort)
+        prompt = prepare_prompt_gpt(question, deep_llm.tokenizer, args.reasoning_effort,
+                                     dataset_type=args.dataset_type)
     else:
-        prompt = prepare_prompt(question, deep_llm.tokenizer, args.model_type)
+        prompt = prepare_prompt(question, deep_llm.tokenizer, args.model_type,
+                                 dataset_type=args.dataset_type)
     
     # Create custom sampling parameters
     sampling_params = SamplingParams(
@@ -265,6 +284,7 @@ def main():
         'ground_truth': ground_truth,
         'qid': args.qid,
         'run_id': args.rid,
+        'dataset_type': args.dataset_type,
         'evaluation': evaluation if ground_truth and result.voting_results else None
     })
     

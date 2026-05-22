@@ -15,6 +15,7 @@
 #   OUTPUT_DIR              where to write .pkl output
 #   TENSOR_PARALLEL         tensor parallel size (default: 1)
 #   MODEL_TYPE              prompt formatting: deepseek, gpt (default: deepseek)
+#   DATASET_TYPE            dataset answer style: math, mcqa (default: math). Set to mcqa for GPQA Diamond.
 #   TEMPERATURE             sampling temperature (default: 0.6)
 #   TOP_P                   nucleus sampling top-p (default: 0.95)
 #   TOP_K                   top-k sampling (default: 0)
@@ -24,7 +25,7 @@
 #   NO_MULTIPLE_VOTING      set to any value to disable multiple voting
 
 universe                = vanilla
-environment             = "RUN_ID=4 TENSOR_PARALLEL=1 MAX_TOKENS=64000 WARMUP_TRACES=16 TOTAL_BUDGET=32 MODEL_TYPE=deepseek CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=2048 TOP_P=0.95 TEMPERATURE=0.6 MODEL_PATH=/data/users/zakhalili/models/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/gpqa_diamond.jsonl OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/ds_gpqa_diamond"
+environment             = "RUN_ID=4 TENSOR_PARALLEL=1 MAX_TOKENS=64000 WARMUP_TRACES=16 TOTAL_BUDGET=32 MODEL_TYPE=deepseek DATASET_TYPE=mcqa CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=2048 TOP_P=0.95 TEMPERATURE=0.6 MODEL_PATH=/data/users/zakhalili/models/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/gpqa_diamond.jsonl OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/ds_gpqa_diamond"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconfTesting/scripts/online_full_run.sh
 output                  = /data/users/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
