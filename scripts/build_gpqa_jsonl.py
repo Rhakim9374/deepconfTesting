@@ -2,16 +2,24 @@
 
 Each output row:
   {
-    "question":   <question>\n\n<a..d options>\n\n<A..D -> a..d mapping>\n\n<instruction>,
+    "question":   <question>\\n\\n<a..d options with text>\\n\\n<instruction>,
     "answer":     "A" | "B" | "C" | "D",
     "unique_id":  <Record ID from source>,
     "subdomain":  <Subdomain from source>
   }
 
-Two independent shuffles per row, both seeded from Record ID for reproducibility:
-  1. The four options are placed into lowercase slots a, b, c, d in a random order.
-  2. A separate random permutation maps each uppercase letter A..D to one lowercase slot.
-The gold answer is the uppercase letter whose mapped lowercase slot holds the correct option.
+Single labeling scheme. The four options are randomly shuffled into
+lowercase slots a, b, c, d (seeded from Record ID for reproducibility), and
+the gold answer is the uppercase letter naming the slot that holds the
+correct option. Grading is case-insensitive on single-letter answers (see
+example_online.py::equal_func), so the model can respond with `c` or `C`
+or `\\boxed{C}` or `\\boxed{\\text{c}}` and all four match.
+
+One CSV format quirk: the source GPQA Diamond CSV occasionally stores the
+options inline in the Question text and uses single letters (`a..d`) as
+Correct Answer / Incorrect Answer N. Those rows are detected and passed
+through without a re-shuffle: the inline options become the lowercase
+block and the gold uppercase letter is just the inline letter, upcased.
 
 Usage:
   python scripts/build_gpqa_jsonl.py \\
@@ -30,38 +38,44 @@ INSTRUCTION = (
     "Your final answer should only contain the letter corresponding to the correct choice."
 )
 LOWER = ["a", "b", "c", "d"]
-UPPER = ["A", "B", "C", "D"]
 
 
 def _seed(record_id: str) -> int:
     return int(hashlib.sha256(record_id.encode("utf-8")).hexdigest(), 16) % (2**32)
 
 
+def _is_inline_letter(text: str) -> bool:
+    """True if `text` is a single a-d letter (Format B row indicator)."""
+    return len(text) == 1 and text.lower() in "abcd"
+
+
 def build_row(row: dict) -> dict:
     correct = row["Correct Answer"].strip()
     incorrect = [row[f"Incorrect Answer {i}"].strip() for i in (1, 2, 3)]
-    options = [correct] + incorrect  # index 0 is the correct option
+    question_text = row["Question"].strip()
 
-    rng = random.Random(_seed(row["Record ID"]))
+    if _is_inline_letter(correct) and all(_is_inline_letter(x) for x in incorrect):
+        # Format B: question already contains the lowercase a..d options inline.
+        # No new shuffle — the source CSV's "Correct Answer" letter is the gold.
+        question = "\n\n".join([question_text, INSTRUCTION])
+        answer = correct.upper()
+    else:
+        # Format A: build a fresh lowercase block from the four option texts,
+        # using a per-row seeded shuffle so the build is reproducible.
+        options = [correct] + incorrect  # index 0 is the correct option
+        rng = random.Random(_seed(row["Record ID"]))
+        lower_perm = list(range(4))
+        rng.shuffle(lower_perm)
+        lower_text = [options[lower_perm[i]] for i in range(4)]
+        correct_lower = lower_perm.index(0)
 
-    # Shuffle the four options into lowercase positions a..d.
-    lower_perm = list(range(4))
-    rng.shuffle(lower_perm)
-    lower_text = [options[lower_perm[i]] for i in range(4)]
-    correct_lower = lower_perm.index(0)  # which lowercase slot holds the correct option
-
-    # Independent shuffle for the uppercase -> lowercase mapping.
-    upper_to_lower = list(range(4))
-    rng.shuffle(upper_to_lower)
-    correct_upper = upper_to_lower.index(correct_lower)
-
-    lower_block = "\n".join(f"{LOWER[i]}) {lower_text[i]}" for i in range(4))
-    upper_block = "\n".join(f"{UPPER[i]}. {LOWER[upper_to_lower[i]]}" for i in range(4))
-    question = "\n\n".join([row["Question"].strip(), lower_block, upper_block, INSTRUCTION])
+        lower_block = "\n".join(f"{LOWER[i]}) {lower_text[i]}" for i in range(4))
+        question = "\n\n".join([question_text, lower_block, INSTRUCTION])
+        answer = LOWER[correct_lower].upper()
 
     return {
         "question": question,
-        "answer": UPPER[correct_upper],
+        "answer": answer,
         "unique_id": row["Record ID"].strip(),
         "subdomain": row.get("Subdomain", "").strip(),
     }
