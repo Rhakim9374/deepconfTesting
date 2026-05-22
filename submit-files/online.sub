@@ -22,12 +22,12 @@
 #   NO_MULTIPLE_VOTING      set to any value to disable multiple voting analysis
 
 universe                = vanilla
-environment             = "TENSOR_PARALLEL=1 MAX_TOKENS=32000 WARMUP_TRACES=16 TOTAL_BUDGET=48 CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=1024 TOP_P=0.7 QUESTION_INDEX=0 MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218 DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl OUTPUT_DIR=/data/users/rhakim/logs/deepconfTesting/outputs"
+environment             = "TENSOR_PARALLEL=1 MAX_TOKENS=32000 WARMUP_TRACES=16 TOTAL_BUDGET=48 CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=1024 TOP_P=0.7 QUESTION_INDEX=0 MODEL_PATH=/data/users/zakhalili/models/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218 DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/AIME24.jsonl OUTPUT_DIR=/data/users1/rhakim/logs/deepconfTesting/outputs"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconfTesting/scripts/online_run.sh
-output                  = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
-error                   = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).err
-log                     = /data/users/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
+output                  = /data/users1/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
+error                   = /data/users1/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).err
+log                     = /data/users1/rhakim/logs/deepconfTesting/logfiles/run.sh.$(ClusterId).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
 request_CPUs            = 1
 request_memory          = 20G
 request_GPUs            = 1
