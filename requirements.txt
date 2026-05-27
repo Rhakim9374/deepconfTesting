@@ -1,5 +1,19 @@
-# Install Dynasor from GitHub repository
+# Install Dynasor from GitHub repository (provides math_equal evaluator)
 git+https://github.com/hao-ai-lab/Dynasor.git
 
-# Install latest version of vLLM
+# vLLM (pulls in torch + tokenizers transitively at compatible versions)
 vllm==0.10.2
+
+# Tokenizer used by deepconfTesting/wrapper.py
+transformers>=4.44
+
+# huggingface-cli login is required to download the gated GPQA dataset.
+# Pinned <1.0 because transformers caps it.
+huggingface_hub>=0.24,<1.0
+
+# Numerical / data — used by wrapper, utils, and analysis scripts
+numpy
+pandas
+
+# Progress bars — used by deepconfTesting/main.py and analysis scripts
+tqdm
