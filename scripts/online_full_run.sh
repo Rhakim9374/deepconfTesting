@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# [diagnostic] raw GPU assignment from HTCondor, BEFORE rename_gpus.sh rewrites it.
-# Tells us whether the scheduler hands us short-UUIDs (GPU-xxxx) or integer indices.
-echo "RAW CUDA_VISIBLE_DEVICES (pre-rename): ${CUDA_VISIBLE_DEVICES:-not set}"
-
 # source setup (paths, GPU rename)
 source /nethome/rhakim/projects/deepconfTesting/scripts/setup.sh
 
@@ -17,7 +13,6 @@ cd $PROJECT_DIR
 echo "=== Diagnostics ==="
 echo "HOSTNAME: $HOSTNAME"
 echo "CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-not set}"
-nvidia-smi -L
 nvidia-smi
 which python
 python --version
