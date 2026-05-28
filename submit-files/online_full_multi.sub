@@ -1,0 +1,38 @@
+# HTCondor submit file for DeepConf full-dataset online mode (multiple runs)
+# Usage: condor_submit /nethome/rhakim/projects/deepconfTesting/submit-files/online_full_multi.sub
+#
+# Each queued job processes ALL questions with a different RUN_ID=$(Process).
+# The model is loaded once per job; questions are looped internally.
+#
+# Environment variables:
+#   MODEL_PATH              (required) path to HuggingFace model
+#   DATASET_PATH            (required) path to JSONL dataset file
+#   RUN_ID                  set automatically to $(Process)
+#   WARMUP_TRACES           number of warmup traces (default: 16)
+#   TOTAL_BUDGET            max total traces per question (default: 256)
+#   CONFIDENCE_PERCENTILE   percentile threshold for early exit (default: 10)
+#   MAX_TOKENS              max generation tokens (default: 64000)
+#   OUTPUT_DIR              where to write .pkl output
+#   TENSOR_PARALLEL         tensor parallel size (default: 1)
+#   MODEL_TYPE              prompt formatting: deepseek, gpt (default: deepseek)
+#   DATASET_TYPE            dataset answer style: math, mcqa (default: math). Set to mcqa for GPQA Diamond.
+#   TEMPERATURE             sampling temperature (default: 0.6)
+#   TOP_P                   nucleus sampling top-p (default: 0.95)
+#   TOP_K                   top-k sampling (default: 0)
+#   WINDOW_SIZE             sliding window size for confidence (default: 2048)
+#   QID_START               first question index, inclusive (default: all)
+#   QID_END                 last question index, exclusive (default: all)
+#   NO_MULTIPLE_VOTING      set to any value to disable multiple voting
+
+universe                = vanilla
+environment             = "RUN_ID=0 TENSOR_PARALLEL=2 NCCL_P2P_DISABLE=1 NCCL_IB_DISABLE=1 ENFORCE_EAGER=1 DISABLE_CUSTOM_ALL_REDUCE=1 NCCL_DEBUG=INFO VLLM_LOGGING_LEVEL=DEBUG MAX_TOKENS=30000 WARMUP_TRACES=16 TOTAL_BUDGET=32 MODEL_TYPE=gpt DATASET_TYPE=mcqa CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=2048 TOP_P=0.95 TEMPERATURE=0.8 MODEL_PATH=/data/users/zakhalili/models/models--microsoft--Phi-4-reasoning-plus/snapshots/69baf8528e1bcf05f475034d9e5dd32875ed125f DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/gpqa_diamond.jsonl OUTPUT_DIR=/data/users1/rhakim/logs/deepconfTesting/phi_gpqa_diamond_2gpus"
+initialdir              = /nethome/rhakim
+executable              = /nethome/rhakim/projects/deepconfTesting/scripts/online_full_run_multi.sh
+output                  = /data/users1/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
+error                   = /data/users1/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).err
+log                     = /data/users1/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
+request_CPUs            = 3
+request_memory          = 60G
+request_GPUs            = 2
+requirements = (machine == "cl18lx.lsv.uni-saarland.de")
+queue 1
