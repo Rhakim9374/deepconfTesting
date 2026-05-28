@@ -61,6 +61,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output_dir", type=str, default="outputs")
     parser.add_argument("--tensor_parallel_size", type=int, default=1)
     parser.add_argument(
+        "--gpu_memory_utilization",
+        type=float,
+        default=0.85,
+        help="Fraction of GPU memory vLLM may use. Lower (e.g. 0.85) leaves "
+        "headroom for the sampler-warmup spike that OOMs at the 0.9 default.",
+    )
+    parser.add_argument(
         "--enforce_eager",
         action="store_true",
         help="Disable torch.compile + CUDA graphs (debug multi-GPU init hangs)",
@@ -108,6 +115,7 @@ def main() -> None:
     llm_kwargs = dict(
         tensor_parallel_size=args.tensor_parallel_size,
         enable_prefix_caching=True,
+        gpu_memory_utilization=args.gpu_memory_utilization,
     )
     if args.enforce_eager:
         llm_kwargs["enforce_eager"] = True
