@@ -25,13 +25,13 @@
 #   NO_MULTIPLE_VOTING      set to any value to disable multiple voting
 
 universe                = vanilla
-environment             = "RUN_ID=0 TENSOR_PARALLEL=2 MAX_TOKENS=30000 WARMUP_TRACES=16 TOTAL_BUDGET=32 MODEL_TYPE=gpt DATASET_TYPE=mcqa CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=2048 TOP_P=0.95 TEMPERATURE=0.8 MODEL_PATH=/data/users/zakhalili/models/models--microsoft--Phi-4-reasoning-plus/snapshots/69baf8528e1bcf05f475034d9e5dd32875ed125f DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/gpqa_diamond.jsonl OUTPUT_DIR=/data/users1/rhakim/logs/deepconfTesting/phi_gpqa_diamond_2gpus"
+environment             = "RUN_ID=0 TENSOR_PARALLEL=2 NCCL_DEBUG=INFO VLLM_LOGGING_LEVEL=DEBUG MAX_TOKENS=30000 WARMUP_TRACES=16 TOTAL_BUDGET=32 MODEL_TYPE=gpt DATASET_TYPE=mcqa CONFIDENCE_PERCENTILE=10 WINDOW_SIZE=2048 TOP_P=0.95 TEMPERATURE=0.8 MODEL_PATH=/data/users/zakhalili/models/models--microsoft--Phi-4-reasoning-plus/snapshots/69baf8528e1bcf05f475034d9e5dd32875ed125f DATASET_PATH=/nethome/rhakim/projects/deepconfTesting/data/gpqa_diamond.jsonl OUTPUT_DIR=/data/users1/rhakim/logs/deepconfTesting/phi_gpqa_diamond_2gpus"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconfTesting/scripts/online_full_run.sh
 output                  = /data/users1/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
 error                   = /data/users1/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).err
 log                     = /data/users1/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
-request_CPUs            = 1
+request_CPUs            = 3
 request_memory          = 60G
 request_GPUs            = 2
 requirements = (machine == "cl18lx.lsv.uni-saarland.de")
