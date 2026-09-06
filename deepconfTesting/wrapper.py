@@ -42,6 +42,18 @@ class DeepThinkLLM:
             "tensor_parallel_size": len(os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")),
             "enable_prefix_caching": True,
             "trust_remote_code": True,
+            # vLLM caps per-request logprobs at max_logprobs (default 20) and
+            # raises VLLMValidationError above it, so the READOUT_TOPK-wide
+            # request the eet_voting read-out needs has to be unlocked here.
+            # ExploreExploitThink does the same in src/experiment.py.
+            "max_logprobs": READOUT_TOPK,
+            # Record raw log-softmax regardless of the request's
+            # temperature/top-p/top-k; sampling still uses the processed
+            # distribution. This is already vLLM's default (>= 0.10) and the
+            # V1 engine's behaviour, so it is a defensive pin -- but it is
+            # the pin that keeps readout_tail_conf the same quantity as the
+            # other runner's tail_conf, which sets it too.
+            "logprobs_mode": "raw_logprobs",
         }
         default_kwargs.update(vllm_kwargs)
         

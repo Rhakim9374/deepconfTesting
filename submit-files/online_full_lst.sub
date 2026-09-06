@@ -26,6 +26,11 @@
 #              dataset. Set QEND for a smoke run, e.g. -a 'QEND = 2'
 #   K          number of independent runs (rid = $(Process))
 #
+# HTCondor holds the job if it cannot create the output/error/log files, so
+# the logfile directory must exist BEFORE the first condor_submit:
+#   mkdir -p /scratch/rhakim/logs/deepconfTesting/logfiles
+# (OUTPUT_DIR does not need this -- main.py makedirs it.)
+#
 # MODEL_PATH must point at a DeepSeek-R1-0528-Qwen3-8B snapshot on LST.
 # VERIFY IT EXISTS BEFORE SUBMITTING:
 #   ls -d /scratch/common_models/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/*
