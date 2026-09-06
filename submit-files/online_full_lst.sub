@@ -1,0 +1,53 @@
+# HTCondor submit file for DeepConf-online on the LST cluster (DeepSeek).
+#
+# The DeepConf-online baseline for the thesis benchmark table: one dataset,
+# K runs, the three ExploreExploitThink voting read-outs recorded alongside
+# DeepConf's own (deepconfTesting/eet_voting.py). Sampling, max_tokens,
+# window and prompt match the ExploreExploitThink DeepSeek runs exactly, so
+# accuracy, decoded tokens and wall-clock are comparable line by line.
+#
+# Usage (from /nethome/rhakim, after `git pull` on the submit node):
+#   condor_submit -a 'WARMUP = 2' -a 'BUDGET = 4'  -a 'DATASET = AIME26' \
+#       projects/deepconfTesting/submit-files/online_full_lst.sub
+# The three budget points are (WARMUP, BUDGET) = (2, 4), (4, 8), (8, 16),
+# each submitted once per dataset (AIME26, HMMT26) -> 6 submissions,
+# K = 3 jobs each.
+#
+# The dataset is read from the ExploreExploitThink checkout on purpose:
+# deepconfTesting/data/ is gitignored, and pointing both methods at the
+# one tracked file guarantees they grade the byte-identical problem set.
+#
+# Macros:
+#   WARMUP     warmup traces (the pool the conf_bar percentile is taken over)
+#   BUDGET     total traces per question; BUDGET - WARMUP are gated
+#   DATASET    AIME26 or HMMT26 (names both the jsonl and the output dir)
+#   PERCENTILE confidence_percentile; 10 = DeepConf-low (paper headline)
+#   QSTART/QEND question index range, [start, end); the defaults span any
+#              dataset. Set QEND for a smoke run, e.g. -a 'QEND = 2'
+#   K          number of independent runs (rid = $(Process))
+#
+# MODEL_PATH must point at a DeepSeek-R1-0528-Qwen3-8B snapshot on LST.
+# VERIFY IT EXISTS BEFORE SUBMITTING:
+#   ls -d /scratch/common_models/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/*
+
+universe                = vanilla
+WARMUP                  = 8
+BUDGET                  = 16
+DATASET                 = AIME26
+PERCENTILE              = 10
+QSTART                  = 0
+QEND                    = 999999
+K                       = 3
+MODEL_PATH              = /scratch/common_models/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa
+environment             = "RUN_ID=$(Process) CONDOR_PROCESS=$(Process) CONDA_ENV=/nethome/rhakim/envs/gemma4Env VLLM_USE_FLASHINFER_SAMPLER=0 TENSOR_PARALLEL=1 WARMUP_TRACES=$(WARMUP) TOTAL_BUDGET=$(BUDGET) CONFIDENCE_PERCENTILE=$(PERCENTILE) WINDOW_SIZE=2048 MAX_TOKENS=64000 MODEL_TYPE=deepseek DATASET_TYPE=math TEMPERATURE=0.7 TOP_P=0.95 TOP_K=20 QID_START=$(QSTART) QID_END=$(QEND) MODEL_PATH=$(MODEL_PATH) DATASET_PATH=/nethome/rhakim/projects/ExploreExploitThink/data/$(DATASET).jsonl OUTPUT_DIR=/scratch/rhakim/logs/deepconfTesting/DS_DEEPCONF_W$(WARMUP)_B$(BUDGET)_P$(PERCENTILE)_T07/$(DATASET)"
+initialdir              = /nethome/rhakim
+executable              = /nethome/rhakim/projects/deepconfTesting/scripts/online_full_run.sh
+output                  = /scratch/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
+error                   = /scratch/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).err
+log                     = /scratch/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).log
+request_CPUs            = 1
+request_memory          = 64G
+request_GPUs            = 1
+requirements            = regexp("H100", GPUs_DeviceName)
++MaxWallTime            = 604800
+queue $(K)

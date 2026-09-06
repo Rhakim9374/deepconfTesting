@@ -4,10 +4,23 @@ set -euo pipefail
 # source setup (paths, GPU rename)
 source /nethome/rhakim/projects/deepconfTesting/scripts/setup.sh
 
-# Activate conda environment
-cd /nethome/rhakim/miniconda3/bin
-source activate deepConfEnv
-cd $PROJECT_DIR
+# Activate the conda env. An env that ships its own bin/activate (the
+# conda-pack transplant on LST) is self-contained and activates directly;
+# anything else activates through miniconda (LSV). Same dispatch as
+# ExploreExploitThink/scripts/run.sh -- see the two conda-pack gotchas noted
+# there: the activate script reads CONDA_PREFIX unguarded (so it cannot run
+# under `set -u`) and prepends to PATH without exporting (so children would
+# see no PATH at all in HTCondor's empty environment).
+if [ -n "${CONDA_ENV:-}" ] && [ -f "${CONDA_ENV}/bin/activate" ]; then
+    set +u
+    source "${CONDA_ENV}/bin/activate"
+    set -u
+    export PATH
+else
+    cd /nethome/rhakim/miniconda3/bin
+    source activate "${CONDA_ENV:-deepConfEnv}"
+    cd "$PROJECT_DIR"
+fi
 
 # diagnostics
 echo "=== Diagnostics ==="

@@ -13,8 +13,10 @@ from typing import Optional, Dict, Any
 import os
 import copy
 
+from .eet_voting import eet_voting_results
 from .outputs import DeepThinkOutput
 from .utils import (
+    DEEPCONF_TOPK, READOUT_TOPK,
     process_batch_results, process_batch_results_offline, 
     weighted_majority_vote, compute_all_voting_results
 )
@@ -113,7 +115,7 @@ class DeepThinkLLM:
                 temperature=0.6,
                 top_p=0.95,
                 max_tokens=32000,
-                logprobs=20,
+                logprobs=READOUT_TOPK,
             )
             
         # Set configuration
@@ -149,9 +151,14 @@ class DeepThinkLLM:
             print("Computing multiple voting results...")
             voting_start = time.time()
             if output.mode == "online":
-                output.voting_results = compute_all_voting_results(output.all_voting_traces)
-            else:   
-                output.voting_results = compute_all_voting_results(output.all_traces)
+                voting_pool = output.all_voting_traces
+            else:
+                voting_pool = output.all_traces
+            output.voting_results = compute_all_voting_results(voting_pool)
+            # The three ExploreExploitThink read-outs over the same pool
+            # DeepConf votes on, so both methods are scored by identical
+            # rules (see deepconfTesting.eet_voting).
+            output.voting_results.update(eet_voting_results(voting_pool))
             
             # Set the primary answer to the majority vote result
             if 'majority' in output.voting_results and output.voting_results['majority']:
@@ -194,7 +201,7 @@ class DeepThinkLLM:
         for param_id in range(warmup_traces):
             warmup_params = copy.deepcopy(sampling_params)
             warmup_params.n = 1
-            warmup_params.logprobs = 20
+            warmup_params.logprobs = READOUT_TOPK
             warmup_params.seed = base_seed + param_id
             warmup_params_list.append(warmup_params)
         warmup_outputs = self.llm.generate([prompt for _ in range(warmup_traces)], warmup_params_list)
@@ -225,13 +232,13 @@ class DeepThinkLLM:
         for param_id in range(total_budget - warmup_traces):
             final_params = copy.deepcopy(sampling_params)
             final_params.n = 1
-            final_params.logprobs = 20
+            final_params.logprobs = READOUT_TOPK
             final_params.seed = base_seed + param_id + warmup_traces
             final_params.extra_args = {
                 "conf_threshold": output.conf_bar,
                 "eos_token_id": self.tokenizer.eos_token_id,
                 "conf_group_size": window_size,
-                "conf_topk": 20,
+                "conf_topk": DEEPCONF_TOPK,
             }
             final_params_list.append(final_params)
         final_outputs = self.llm.generate([prompt for _ in range(total_budget - warmup_traces)], final_params_list)
@@ -279,7 +286,7 @@ class DeepThinkLLM:
         for param_id in range(budget):
             sampling_params_x = copy.deepcopy(sampling_params)
             sampling_params_x.n = 1
-            sampling_params_x.logprobs = 20
+            sampling_params_x.logprobs = READOUT_TOPK
             sampling_params_x.seed = base_seed + param_id
             sampling_params_list.append(sampling_params_x)
 

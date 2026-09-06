@@ -15,6 +15,7 @@ from datetime import datetime
 
 from vllm import SamplingParams
 
+from .utils import READOUT_TOPK
 from .wrapper import DeepThinkLLM
 from examples.example_online import (
     DATASET_TYPES,
@@ -107,7 +108,9 @@ def main() -> None:
         top_p=args.top_p,
         top_k=args.top_k,
         max_tokens=args.max_tokens,
-        logprobs=20, # back to 20 default
+        # Wide enough for the ExploreExploitThink read-out; DeepConf's own
+        # confidence still slices its published top-20 (utils.DEEPCONF_TOPK).
+        logprobs=READOUT_TOPK,
     )
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -197,6 +200,14 @@ def main() -> None:
                 "total_tokens": getattr(result, "total_tokens", None),
                 "warmup_tokens": getattr(result, "warmup_tokens", None),
                 "final_tokens": getattr(result, "final_tokens", None),
+                # processing_time is the wall-clock comparable with
+                # ExploreExploitThink's per-problem `elapsed_s`: generation
+                # plus trace processing plus answer extraction, excluding
+                # model load and the post-hoc voting analysis. total_time and
+                # q_elapsed additionally include the voting analysis.
+                "processing_time": getattr(result, "processing_time", None),
+                "warmup_gen_time": getattr(result, "warmup_gen_time", None),
+                "final_gen_time": getattr(result, "final_gen_time", None),
                 "total_time": getattr(result, "total_time", None),
                 "q_elapsed": q_elapsed,
                 "conf_bar": getattr(result, "conf_bar", None),
@@ -238,8 +249,12 @@ def main() -> None:
     # Total tokens / time
     total_tokens = sum(e["total_tokens"] for e in summary_results if e["total_tokens"])
     total_time = sum(e["q_elapsed"] for e in summary_results)
+    total_processing = sum(
+        e["processing_time"] for e in summary_results if e["processing_time"]
+    )
     print(f"\nTotal tokens: {total_tokens}")
     print(f"Total wall time: {total_time:.1f}s")
+    print(f"Total processing time (comparable to EET elapsed_s): {total_processing:.1f}s")
 
     # Save summary pkl
     summary = {
@@ -265,6 +280,7 @@ def main() -> None:
         },
         "total_tokens": total_tokens,
         "total_time": total_time,
+        "total_processing_time": total_processing,
     }
 
     summary_path = os.path.join(

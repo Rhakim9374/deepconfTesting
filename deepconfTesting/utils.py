@@ -38,16 +38,50 @@ def extract_answer(text: str) -> Optional[str]:
 
 
 
-def compute_confidence(logprobs: List[Dict]) -> List[float]:
+# Top-k widths. DEEPCONF_TOPK is the paper's published confidence width and
+# drives everything DeepConf itself decides (conf_bar, the early-kill in
+# ConfPerReqLogitsProcessor). READOUT_TOPK is ExploreExploitThink's
+# branch_scoring_metric_k and is used ONLY by the eet_voting read-outs, so
+# both methods weight their votes by the identical scalar. The sampling
+# params therefore request READOUT_TOPK logprobs and each consumer slices
+# the width it wants -- with top_k = DEEPCONF_TOPK sampling the top-20 set
+# is unchanged by the wider request, so DeepConf's own numbers do not move.
+DEEPCONF_TOPK = 20
+READOUT_TOPK = 32
+
+
+def compute_confidence(logprobs: List[Dict], k: int = DEEPCONF_TOPK) -> List[float]:
     """Compute confidence score from logprobs and return only confidence values"""
     confs = []
     for token_logprobs in logprobs:
         if token_logprobs:
-            # vLLM returns a dict of {token_id: Logprob object}
-            # Get the selected token's logprob (the one with highest probability)
-            mean_logprob = np.mean([lp.logprob for lp in token_logprobs.values()])
+            # vLLM returns a dict of {token_id: Logprob object}, one entry per
+            # requested logprob plus the sampled token when it falls outside
+            # them; sort so the slice is the top k by probability.
+            ranked = sorted(
+                (lp.logprob for lp in token_logprobs.values()), reverse=True,
+            )
+            mean_logprob = np.mean(ranked[:k])
             confs.append(round(-mean_logprob, 3))
     return confs
+
+
+def compute_readout_tail_conf(logprobs: List[Dict], window_size: int) -> float:
+    """ExploreExploitThink's ``tail_conf`` for one trace.
+
+    Mean per-token confidence at :data:`READOUT_TOPK` over the last
+    ``window_size`` tokens (all of them when the trace is shorter --
+    ``collect_tail_entries`` semantics). This is the scalar the three
+    eet_voting read-outs weight and rank by.
+    """
+    tail = logprobs[-window_size:] if len(logprobs) > window_size else logprobs
+    confs = [
+        -np.mean(sorted((lp.logprob for lp in e.values()), reverse=True)[:READOUT_TOPK])
+        for e in tail if e
+    ]
+    # NOT routed through compute_confidence: that rounds each token to 3
+    # decimals for storage, and ExploreExploitThink's tail_conf does not.
+    return float(np.mean(confs)) if confs else 0.0
 
 
 def compute_least_grouped(confs: List[float], group_size: int) -> List[float]:
@@ -299,6 +333,11 @@ def process_output(output, window_size: int) -> Dict[str, Any]:
         "confs": confs,  # Store individual token confidences
         "group_confs": sliding_window,
         "min_conf": min(sliding_window) if sliding_window else 0,
+        # ExploreExploitThink's tail_conf, the scalar its three voting
+        # read-outs use (kept as a scalar so the pkl does not grow).
+        "readout_tail_conf": (
+            compute_readout_tail_conf(logprobs, window_size) if logprobs else None
+        ),
         "extracted_answer": extracted_answer,
     }
 
@@ -347,6 +386,9 @@ def process_output_offline(output, window_size: int) -> Dict[str, Any]:
         "token_ids": token_ids,
         "num_tokens": len(token_ids) if token_ids else 0,
         "confs": confs,  # Store full confidence array for offline analysis
+        "readout_tail_conf": (
+            compute_readout_tail_conf(logprobs, window_size) if logprobs else None
+        ),
         "extracted_answer": extracted_answer,
     }
 
