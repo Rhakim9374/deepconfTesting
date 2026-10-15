@@ -77,6 +77,10 @@ class DeepThinkLLM:
             # the pin that keeps readout_tail_conf the same quantity as the
             # other runner's tail_conf, which sets it too.
             "logprobs_mode": "raw_logprobs",
+            # Gated-DeltaNet prefill (Qwen3.5/3.8) in Triton, as in
+            # ExploreExploitThink's backend: on Hopper vLLM otherwise picks
+            # FlashInfer's JIT-compiled kernel, and the nodes have no nvcc.
+            "gdn_prefill_backend": "triton",
         }
         default_kwargs.update(vllm_kwargs)
         
