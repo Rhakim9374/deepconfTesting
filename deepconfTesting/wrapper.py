@@ -81,6 +81,10 @@ class DeepThinkLLM:
             # ExploreExploitThink's backend: on Hopper vLLM otherwise picks
             # FlashInfer's JIT-compiled kernel, and the nodes have no nvcc.
             "gdn_prefill_backend": "triton",
+            # At most a few dozen sequences per batch; vLLM's H100 default
+            # (1024) exceeds the per-sequence GDN state slots Qwen3.8 can
+            # fit, which aborts CUDA-graph capture.
+            "max_num_seqs": 256,
         }
         default_kwargs.update(vllm_kwargs)
         
