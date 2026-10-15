@@ -28,6 +28,10 @@ class DeepThinkOutput:
     voting_answers: List[str] = field(default_factory=list)
     voting_weights: List[float] = field(default_factory=list)
     
+    # Recorded-only Adaptive-Consistency replay over the native voting
+    # pool (online mode; see eet_asc.shadow_record)
+    asc: Optional[Dict[str, Any]] = None
+
     # Confidence information (for online mode)
     conf_bar: Optional[float] = None
     warmup_min_confs: List[float] = field(default_factory=list)
@@ -79,6 +83,9 @@ class DeepThinkOutput:
             "voting_answers": self.voting_answers,
             "voting_weights": self.voting_weights,
             
+            # Recorded-only ASC replay
+            "asc": self.asc,
+
             # Confidence information
             "conf_bar": self.conf_bar,
             "warmup_min_confs": self.warmup_min_confs,

@@ -31,8 +31,16 @@ ANSWER_INSTRUCTIONS = {
 
 def prepare_prompt(question: str, tokenizer, model_type: str = "deepseek",
                    dataset_type: str = "math") -> str:
-    """Prepare prompt for a single question"""
+    """Prepare prompt for a single question.
+
+    Mirrors ExploreExploitThink's ``eet.prompts.prepare_prompt`` per model
+    type so both runners send the same prompt: ``deepseek`` adds DeepConf's
+    system prompt; ``gemma`` passes ``enable_thinking=True``; ``qwen``
+    (Qwen3 family, thinking on by default) and ``muse`` (Muse Glimmer, whose
+    template writes its own system block) send the user message alone.
+    """
     answer_instruction = ANSWER_INSTRUCTIONS[dataset_type]
+    template_kwargs = {}
     if model_type == "deepseek":
         # Format prompt using chat template for DeepSeek
         messages = [
@@ -40,15 +48,17 @@ def prepare_prompt(question: str, tokenizer, model_type: str = "deepseek",
             {"role": "user", "content": question + answer_instruction}
         ]
     else:
-        # Format for GPT-like models
         messages = [
             {"role": "user", "content": question + answer_instruction}
         ]
+        if model_type == "gemma":
+            template_kwargs["enable_thinking"] = True
 
     full_prompt = tokenizer.apply_chat_template(
         messages,
         tokenize=False,
-        add_generation_prompt=True
+        add_generation_prompt=True,
+        **template_kwargs
     )
 
     return full_prompt

@@ -32,6 +32,28 @@ DeepConf is an efficient parallel thinking framework built upon popular LLM serv
 </div>
 
 
+## ExploreExploitThink comparison instrumentation
+
+`deepconfTesting/main.py` runs the full-dataset online baseline used by the
+ExploreExploitThink thesis/paper. Since October 2026 it also records a
+recorded-only Adaptive-Consistency replay per question (`asc` in the pkl,
+graded in `asc_evaluation`): `DeepThinkLLM.generate_observed` queues each
+batch on vLLM's engine exactly as `generate` does and runs the engine loop
+itself with delta outputs, stamping every finished request with its finish
+time and the batch's decoded tokens; warm-up traces become eligible voters
+together at calibration, final-phase traces when they finish unkilled, and
+`eet_asc.shadow_record` (a copy of ExploreExploitThink's `eet.asc`, pinned
+by that repo's parity test) replays the published Beta rule over the log.
+Nothing is stopped early. `--model_type` accepts `deepseek`, `gpt`,
+`gemma`, `qwen` and `muse`, mirroring `eet.prompts.prepare_prompt`, and the
+submit files take the model as macros (`MODEL_PATH`, `MODEL_TYPE`,
+`TEMPERATURE`, `TOP_P`, `TOP_K`, `MAX_TOKENS`, `TAG`, `TSUF`). `CONDA_ENV`
+defaults to the vLLM 0.28 venv of the paper's runs, built per cluster by
+ExploreExploitThink's `scripts/setup_vllm_env.sh` (which installs this repo
+editable); the custom logits processor uses the V1 adapter API that is
+identical in vLLM 0.23 and 0.28. The DeepSeek default `TSUF` is `T07_V028`,
+so runs on that env never pool with the thesis's `*_T07` directories.
+
 ## Quick Start
 
 ### Installation

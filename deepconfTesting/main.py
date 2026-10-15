@@ -47,7 +47,11 @@ def parse_args() -> argparse.Namespace:
         "--model_type",
         type=str,
         default="deepseek",
-        choices=["deepseek", "gpt"],
+        choices=["deepseek", "gpt", "gemma", "qwen", "muse"],
+        help="Chat template (examples.example_online.prepare_prompt): deepseek "
+             "adds DeepConf's system prompt; gemma passes enable_thinking; "
+             "qwen (Qwen3 family) and muse (Muse Glimmer) send the "
+             "user message alone; gpt uses prepare_prompt_gpt.",
     )
     parser.add_argument(
         "--dataset_type",
@@ -73,6 +77,24 @@ def parse_args() -> argparse.Namespace:
         "--qid_end", type=int, default=None, help="Last question index (exclusive)"
     )
     return parser.parse_args()
+
+
+def asc_evaluation(asc, ground_truth):
+    """Grade the recorded-only ASC replay like ExploreExploitThink's
+    ``experiment.asc_outcomes``: each policy's effective answers (the stop
+    pool's when it fired, else the full run's) against the ground truth."""
+    if asc is None:
+        return None
+    graded = {k: asc[k] for k in ("threshold", "admissions", "checkpoints")}
+    for policy in ("event", "checkpoint", "full"):
+        stop = asc[policy] or asc["full"]
+        graded[policy] = {
+            **stop,
+            "fired": bool(asc[policy]) and policy != "full",
+            "majority_correct": bool(stop["majority_answer"]) and equal_func(stop["majority_answer"], ground_truth),
+            "zsoftmax_correct": bool(stop["zsoftmax_answer"]) and equal_func(stop["zsoftmax_answer"], ground_truth),
+        }
+    return graded
 
 
 def main() -> None:
@@ -156,10 +178,19 @@ def main() -> None:
         # Evaluate
         evaluation = None
         confidence_eval = None
+        asc_eval = None
         if ground_truth:
             if result.voting_results:
                 evaluation = evaluate_voting_results(result.voting_results, ground_truth)
             confidence_eval = evaluate_confidence_methods(result, ground_truth)
+            asc_eval = asc_evaluation(result.asc, ground_truth)
+            for policy in ("event", "checkpoint", "full"):
+                st = asc_eval[policy]
+                status = ("fired at " if st["fired"] else "never fired; full run at ") if policy != "full" else ""
+                print(f"  ASC {policy:10s} {status}round {st['round']}, {st['time_s']:.1f}s, "
+                      f"{st['tokens']} tok, {st['n_answered']}/{st['n_admitted']} voters: "
+                      f"majority={st['majority_answer']} ({'OK' if st['majority_correct'] else 'WRONG'}), "
+                      f"zsoftmax={st['zsoftmax_answer']} ({'OK' if st['zsoftmax_correct'] else 'WRONG'})")
 
         # Print short status
         if evaluation:
@@ -178,6 +209,7 @@ def main() -> None:
                 "dataset_type": args.dataset_type,
                 "evaluation": evaluation,
                 "confidence_evaluation": confidence_eval,
+                "asc_evaluation": asc_eval,
             }
         )
 

@@ -7,12 +7,15 @@ LICENSE file in the root directory of this source tree.
 """
 from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
+import itertools
 import time
 import numpy as np
-from typing import Optional, Dict, Any
+from dataclasses import dataclass, field
+from typing import List, Optional, Dict, Any
 import os
 import copy
 
+from .eet_asc import shadow_record
 from .eet_voting import eet_voting_results
 from .outputs import DeepThinkOutput
 from .utils import (
@@ -21,6 +24,26 @@ from .utils import (
     weighted_majority_vote, compute_all_voting_results
 )
 from .processors import WrappedPerReqLogitsProcessor
+
+
+@dataclass
+class ObservedCompletion:
+    """One request's output accumulated over the engine's delta outputs
+    (the ``CompletionOutput`` fields ``process_output`` reads), plus the
+    step in which it finished. Mirror of ExploreExploitThink's
+    ``backend.ObservedCompletion``."""
+    index: int = 0
+    text: str = ""
+    token_ids: List[int] = field(default_factory=list)
+    logprobs: List[dict] = field(default_factory=list)
+    finish_reason: Optional[str] = None
+    finish_time_s: Optional[float] = None
+    batch_tokens_at_finish: Optional[int] = None
+
+
+@dataclass
+class ObservedRequest:
+    outputs: List[ObservedCompletion]
 
 
 class DeepThinkLLM:
@@ -75,10 +98,56 @@ class DeepThinkLLM:
             'llm_init_time': llm_init_time,
             'tokenizer_init_time': tokenizer_init_time
         }
+        # Engine request ids must be unique while a request is live.
+        self._request_ids = itertools.count()
     
     def generate(self, *args, **kwargs):
         """Simple wrapper around vLLM's generate method"""
         return self.llm.generate(*args, **kwargs)
+
+    def generate_observed(self, prompts, params_list):
+        """vLLM's ``generate`` path for one prompt-per-params batch,
+        observed step by step (mirror of ExploreExploitThink's
+        ``backend.observe_engine``): the requests are queued on the engine
+        in delta-output mode, the engine loop runs here, and each result
+        carries the elapsed time of the step in which it finished and the
+        batch's decoded-token total at that step (requests finishing in
+        the same step share both). Scheduling, sampling, the per-request
+        logits processor and the returned content are unchanged; the
+        results come back in prompt order with the ``.outputs`` shape
+        ``process_batch_results`` reads.
+        """
+        from vllm.sampling_params import RequestOutputKind
+        engine = self.llm.llm_engine
+        request_ids = []
+        for prompt, params in zip(prompts, params_list):
+            params = copy.deepcopy(params)
+            params.output_kind = RequestOutputKind.DELTA
+            rid = str(next(self._request_ids))
+            request_ids.append(rid)
+            engine.add_request(rid, prompt, params)
+        streams = {rid: ObservedCompletion() for rid in request_ids}
+        decoded = 0
+        start = time.perf_counter()
+        while engine.has_unfinished_requests():
+            step_outputs = engine.step()
+            elapsed = time.perf_counter() - start
+            finished = []
+            for out in step_outputs:
+                for completion in out.outputs:
+                    target = streams[out.request_id]
+                    target.text += completion.text
+                    target.token_ids.extend(completion.token_ids)
+                    if completion.logprobs:
+                        target.logprobs.extend(completion.logprobs)
+                    decoded += len(completion.token_ids)
+                    if completion.finish_reason is not None:
+                        target.finish_reason = completion.finish_reason
+                        finished.append(target)
+            for target in finished:
+                target.finish_time_s = elapsed
+                target.batch_tokens_at_finish = decoded
+        return [ObservedRequest([streams[rid]]) for rid in request_ids]
     
     def deepthink(
         self,
@@ -201,6 +270,8 @@ class DeepThinkLLM:
         """Online deep thinking with confidence-based early stopping"""
         
         processing_start = time.time()
+        # The ASC replay's clock: one monotonic frame for every stamp.
+        processing_start_perf = time.perf_counter()
         
         # Warmup phase
         print(f"Starting warmup phase...", sampling_params)
@@ -216,7 +287,7 @@ class DeepThinkLLM:
             warmup_params.logprobs = READOUT_TOPK
             warmup_params.seed = base_seed + param_id
             warmup_params_list.append(warmup_params)
-        warmup_outputs = self.llm.generate([prompt for _ in range(warmup_traces)], warmup_params_list)
+        warmup_outputs = self.generate_observed([prompt for _ in range(warmup_traces)], warmup_params_list)
         output.warmup_gen_time = time.time() - warmup_gen_start
         
         # Process warmup results
@@ -232,6 +303,18 @@ class DeepThinkLLM:
         output.warmup_tokens = warmup_result['total_tokens']
         
         print(f"Warmup completed: conf_bar={output.conf_bar:.3f}")
+        # Warm-up voters become eligible only now, once the threshold they
+        # are tested against exists; they are admitted together at the
+        # calibration moment, in native order.
+        calibration_offset = time.perf_counter() - processing_start_perf
+        admissions = [
+            {"index": i, "round": 1, "time_s": calibration_offset,
+             "tokens": output.warmup_tokens}
+            for i in range(warmup_traces)
+        ]
+        checkpoints = [{"round": 1, "time_s": calibration_offset,
+                        "tokens": output.warmup_tokens,
+                        "n_admitted": warmup_traces}]
         
         # Final phase
         print(f"Starting final phase...", sampling_params)
@@ -253,8 +336,16 @@ class DeepThinkLLM:
                 "conf_topk": DEEPCONF_TOPK,
             }
             final_params_list.append(final_params)
-        final_outputs = self.llm.generate([prompt for _ in range(total_budget - warmup_traces)], final_params_list)
+        final_offset = time.perf_counter() - processing_start_perf
+        final_outputs = self.generate_observed([prompt for _ in range(total_budget - warmup_traces)], final_params_list)
         output.final_gen_time = time.time() - final_gen_start
+        # Final-phase voters are eligible the moment they finish unkilled.
+        admissions += [
+            {"index": warmup_traces + i, "round": 2,
+             "time_s": final_offset + req.outputs[0].finish_time_s,
+             "tokens": output.warmup_tokens + req.outputs[0].batch_tokens_at_finish}
+            for i, req in enumerate(final_outputs)
+        ]
         
         # Process final results
         final_process_start = time.time()
@@ -281,6 +372,20 @@ class DeepThinkLLM:
         self._perform_basic_voting(output)
         
         output.processing_time = time.time() - processing_start
+        # Recorded-only ASC replay over DeepConf's own eligible voters:
+        # a trace votes only when it cleared conf_bar and answered.
+        eligible = [t.get('min_conf', 0) >= output.conf_bar and bool(t.get('extracted_answer'))
+                    for t in output.all_traces]
+        checkpoints.append({"round": 2, "time_s": time.perf_counter() - processing_start_perf,
+                            "tokens": output.total_tokens,
+                            "n_admitted": len(admissions)})
+        output.asc = shadow_record(
+            admissions, checkpoints,
+            [t['extracted_answer'] if ok else None for t, ok in zip(output.all_traces, eligible)],
+            [t.get('readout_tail_conf') for t in output.all_traces],
+            full_time_s=time.perf_counter() - processing_start_perf,
+            full_tokens=output.total_tokens,
+        )
         return output
     
     def _deepthink_offline(
