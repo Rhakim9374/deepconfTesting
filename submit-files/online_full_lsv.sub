@@ -47,7 +47,11 @@ K                       = 1
 # ExploreExploitThink); the thesis runs used
 # /data/users/rhakim/conda/envs/gemma4Env
 CONDA_ENV               = /data/users/rhakim/envs/vllm028Env
-MODEL_PATH              = /data/users/zakhalili/models/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa
+# DeepSeek snapshot 6e8885a6 (zakhalili's) with tokenizer_class
+# TokenizersBackend (scripts/fix_tokenizer_class.sh in
+# ExploreExploitThink); the snapshot as is loads a tokenizer that strips
+# the prompt's spaces
+MODEL_PATH              = /data/users/rhakim/models/DeepSeek-R1-0528-Qwen3-8B
 MODEL_TYPE              = deepseek
 TEMPERATURE             = 0.7
 TOP_P                   = 0.95

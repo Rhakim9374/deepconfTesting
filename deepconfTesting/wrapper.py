@@ -46,6 +46,31 @@ class ObservedRequest:
     outputs: List[ObservedCompletion]
 
 
+# Spaces, a blank line, non-ASCII and LaTeX, as in prompts and answers.
+TOKENIZER_PROBE = ("Thus $\\boxed{1 - \\dfrac{2}{\\pi}}$.\n\nWait,  let me re-check: "
+                   "x² ≥ 0 — 该助手 π\t\\left(-\\frac{13}{96},\\ \\frac{13}{40}\\right)")
+
+
+def check_tokenizer(tokenizer, model_path: str) -> None:
+    """Raise unless ``tokenizer`` encodes and decodes like the model's own
+    ``tokenizer.json``. Mirror of ExploreExploitThink's
+    ``backend.check_tokenizer``: Transformers 5 builds the tokenizer from
+    the class ``tokenizer_config.json`` declares, and
+    DeepSeek-R1-0528-Qwen3-8B declares LlamaTokenizerFast over a
+    byte-level vocabulary, which strips spaces, newlines and non-ASCII
+    from prompts and leaves byte markers (Ġ, Ċ) in the decoded text (fix:
+    ExploreExploitThink's scripts/fix_tokenizer_class.sh)."""
+    from tokenizers import Tokenizer
+
+    reference = Tokenizer.from_file(os.path.join(model_path, "tokenizer.json"))
+    ids = reference.encode(TOKENIZER_PROBE, add_special_tokens=False).ids
+    if (tokenizer.encode(TOKENIZER_PROBE, add_special_tokens=False) != ids
+            or tokenizer.decode(ids) != TOKENIZER_PROBE):
+        raise RuntimeError(
+            f"the tokenizer loaded for {model_path} does not reproduce its "
+            "tokenizer.json")
+
+
 class DeepThinkLLM:
     """Enhanced LLM wrapper with deep thinking capabilities"""
     
@@ -91,6 +116,7 @@ class DeepThinkLLM:
         print("Initializing vLLM engine...")
         llm_init_start = time.time()
         self.llm = LLM(model=model, logits_processors=[WrappedPerReqLogitsProcessor], **default_kwargs)
+        check_tokenizer(self.llm.get_tokenizer(), model)
         llm_init_time = time.time() - llm_init_start
         print(f"vLLM engine initialized in {llm_init_time:.2f} seconds")
         

@@ -52,7 +52,12 @@ defaults to the vLLM 0.28 venv of the paper's runs, built per cluster by
 ExploreExploitThink's `scripts/setup_vllm_env.sh` (which installs this repo
 editable); the custom logits processor uses the V1 adapter API that is
 identical in vLLM 0.23 and 0.28. The DeepSeek default `TSUF` is `T07_V028`,
-so runs on that env never pool with the thesis's `*_T07` directories.
+so runs on that env never pool with the thesis's `*_T07` directories. The
+DeepSeek `MODEL_PATH` defaults name the linked checkpoint directories of
+ExploreExploitThink's `scripts/fix_tokenizer_class.sh`: under Transformers 5
+the snapshot's declared `LlamaTokenizerFast` strips the prompt's spaces, and
+`DeepThinkLLM` stops at startup unless the engine's tokenizer reproduces the
+model's `tokenizer.json`.
 
 ## Quick Start
 
