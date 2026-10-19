@@ -133,6 +133,9 @@ def main() -> None:
         model=args.model,
         tensor_parallel_size=args.tensor_parallel_size,
         enable_prefix_caching=True,
+        # The cap plus 2,048 prompt tokens, as in ExploreExploitThink's
+        # src/experiment.py, rather than the model's full context.
+        max_model_len=args.max_tokens + 2048,
     )
     print(f"Model loaded in {time.time() - t0:.1f}s")
 
