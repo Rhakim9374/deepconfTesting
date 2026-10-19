@@ -14,8 +14,8 @@
 # The budget points are (WARMUP, BUDGET) = (2, 4), (4, 8), (8, 16), (16, 32),
 # (16, 64): DeepConf's own 16 warm-up traces wherever the budget exceeds
 # them, half the budget below 32. The paper's runs are the nodes of
-# ExploreExploitThink's scripts/campaign_dag.sh (TENSOR_PARALLEL = 4, 8 CPUs,
-# 96G, Muse 128G: the most KV cache an LSV node gives a run). It runs each point once, for its
+# ExploreExploitThink's scripts/campaign_dag.sh (DeepSeek and Gemma on one
+# GPU, 2 CPUs, 64G; Muse at TENSOR_PARALLEL = 4, 8 CPUs, 128G). It runs each point once, for its
 # time; its accuracy and tokens replay the same rule on ExploreExploitThink's
 # full-parallel pool. At BUDGET = 64 also -a 'request_memory = 64G' (the
 # runner keeps vLLM's logprob dicts of a whole batch).
