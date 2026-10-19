@@ -20,7 +20,6 @@ from examples.example_online import (
     DATASET_TYPES,
     prepare_prompt,
     prepare_prompt_gpt,
-    equal_func,
     evaluate_voting_results,
     evaluate_confidence_methods,
 )

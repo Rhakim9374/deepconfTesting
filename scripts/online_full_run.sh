@@ -31,6 +31,14 @@ which python
 python --version
 echo "==================="
 
+# On more than one GPU the PCIe nodes need NCCL's peer-to-peer /
+# InfiniBand transports disabled (as in ExploreExploitThink/scripts/run.sh).
+NUM_GPUS=$(printf '%s' "${CUDA_VISIBLE_DEVICES:-0}" | awk -F',' '{print NF}')
+[ "${NUM_GPUS}" -ge 1 ] || NUM_GPUS=1
+if [ "${NUM_GPUS}" -gt 1 ]; then
+    export NCCL_P2P_DISABLE=1 NCCL_IB_DISABLE=1
+fi
+
 # build command from environment variables
 CMD="python -m deepconfTesting.main --model ${MODEL_PATH} --dataset ${DATASET_PATH}"
 

@@ -29,9 +29,8 @@ from .processors import WrappedPerReqLogitsProcessor
 @dataclass
 class ObservedCompletion:
     """One request's output accumulated over the engine's delta outputs
-    (the ``CompletionOutput`` fields ``process_output`` reads), plus the
-    step in which it finished. Mirror of ExploreExploitThink's
-    ``backend.ObservedCompletion``."""
+    (the ``CompletionOutput`` fields ``process_output`` reads, vLLM's
+    logprob dicts included), plus the step in which it finished."""
     index: int = 0
     text: str = ""
     token_ids: List[int] = field(default_factory=list)
@@ -44,6 +43,25 @@ class ObservedCompletion:
 @dataclass
 class ObservedRequest:
     outputs: List[ObservedCompletion]
+
+
+def _multi_gpu_vllm_defaults(tensor_parallel_size: int) -> dict:
+    """vLLM init kwargs that keep PCIe multi-GPU stable; empty for a
+    single GPU. Mirror of ExploreExploitThink's
+    ``backend._multi_gpu_vllm_defaults``.
+
+    On a tensor-parallel split without NVLink, vLLM's custom all-reduce
+    kernel hangs, so fall back to NCCL all-reduce; and the 0.9 memory
+    default OOMs on the sampler-warmup spike, so leave headroom. NCCL's
+    peer-to-peer and InfiniBand transports are disabled via the job
+    environment (NCCL_P2P_DISABLE / NCCL_IB_DISABLE).
+    """
+    if tensor_parallel_size <= 1:
+        return {}
+    return {
+        "disable_custom_all_reduce": True,
+        "gpu_memory_utilization": 0.85,
+    }
 
 
 # Spaces, a blank line, non-ASCII and LaTeX, as in prompts and answers.
@@ -86,8 +104,12 @@ class DeepThinkLLM:
         self.vllm_kwargs = vllm_kwargs
         
         # Initialize vLLM
+        tp = vllm_kwargs.get(
+            "tensor_parallel_size",
+            len(os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")),
+        )
         default_kwargs = {
-            "tensor_parallel_size": len(os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")),
+            "tensor_parallel_size": tp,
             "enable_prefix_caching": True,
             "trust_remote_code": True,
             # vLLM caps per-request logprobs at max_logprobs (default 20) and
@@ -110,6 +132,11 @@ class DeepThinkLLM:
             # (1024) exceeds the per-sequence GDN state slots Qwen3.8 can
             # fit, which aborts CUDA-graph capture.
             "max_num_seqs": 256,
+            # Engine statistics on, as in ExploreExploitThink: preemptions()
+            # reads vLLM's counter and the job log gets the periodic
+            # running/waiting/KV-usage line.
+            "disable_log_stats": False,
+            **_multi_gpu_vllm_defaults(tp),
         }
         default_kwargs.update(vllm_kwargs)
         
@@ -135,6 +162,12 @@ class DeepThinkLLM:
         # Engine request ids must be unique while a request is live.
         self._request_ids = itertools.count()
     
+    def preemptions(self) -> int:
+        """vLLM's ``vllm:num_preemptions`` counter: zero growth over a
+        question means every request stayed resident from admission to
+        finish."""
+        return sum(m.value for m in self.llm.get_metrics() if m.name == "vllm:num_preemptions")
+
     def generate(self, *args, **kwargs):
         """Simple wrapper around vLLM's generate method"""
         return self.llm.generate(*args, **kwargs)
@@ -146,20 +179,25 @@ class DeepThinkLLM:
         in delta-output mode, the engine loop runs here, and each result
         carries the elapsed time of the step in which it finished and the
         batch's decoded-token total at that step (requests finishing in
-        the same step share both). Scheduling, sampling, the per-request
+        the same step share both). Prompts go in as token ids, so both
+        runners send identical tokens. Scheduling, sampling, the per-request
         logits processor and the returned content are unchanged; the
         results come back in prompt order with the ``.outputs`` shape
         ``process_batch_results`` reads.
         """
+        from vllm.inputs import TokensPrompt
         from vllm.sampling_params import RequestOutputKind
         engine = self.llm.llm_engine
+        tokenizer = self.llm.get_tokenizer()
         request_ids = []
         for prompt, params in zip(prompts, params_list):
             params = copy.deepcopy(params)
             params.output_kind = RequestOutputKind.DELTA
             rid = str(next(self._request_ids))
             request_ids.append(rid)
-            engine.add_request(rid, prompt, params)
+            # Token ids encoded as ExploreExploitThink's backend encodes them:
+            # the chat template already writes the BOS, so none is added.
+            engine.add_request(rid, TokensPrompt(prompt_token_ids=tokenizer.encode(prompt, add_special_tokens=False)), params)
         streams = {rid: ObservedCompletion() for rid in request_ids}
         decoded = 0
         start = time.perf_counter()

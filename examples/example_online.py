@@ -12,7 +12,7 @@ from datetime import datetime
 from deepconfTesting import DeepThinkLLM
 from vllm import SamplingParams
 import time 
-from dynasor.core.evaluator import math_equal
+from deepconfTesting.grading import check_correct
 from deepconfTesting.utils import extract_answer
 
 # ============= PROMPT PREPARATION FUNCTIONS =============
@@ -23,6 +23,9 @@ from deepconfTesting.utils import extract_answer
 # contain the letter..." so the model sees both — they reinforce, per DeepConf
 # paper Appendix F p. 24). Keep the dict so future dataset types can diverge.
 DATASET_TYPES = ("math", "mcqa")
+# Muse Glimmer's template writes the render date into its system block
+# unless given one; fixed as in ExploreExploitThink's eet.constants.
+MUSE_CURRENT_DATE = "2026-10-18"
 ANSWER_INSTRUCTIONS = {
     "math": "\nPlease reason step by step, and put your final answer within \\boxed{}.",
     "mcqa": "\nPlease reason step by step, and put your final answer within \\boxed{}.",
@@ -53,6 +56,8 @@ def prepare_prompt(question: str, tokenizer, model_type: str = "deepseek",
         ]
         if model_type == "gemma":
             template_kwargs["enable_thinking"] = True
+        if model_type == "muse":
+            template_kwargs["current_date"] = MUSE_CURRENT_DATE
 
     full_prompt = tokenizer.apply_chat_template(
         messages,
@@ -82,32 +87,6 @@ def prepare_prompt_gpt(question: str, tokenizer, reasoning_effort: str = "high",
     return full_prompt
 
 
-def quick_parse(text: str) -> str:
-    """Parse LaTeX text content"""
-    if '\\text{' in text and '}' in text:
-        # Find all occurrences of \text{...} and remove them
-        while '\\text{' in text:
-            start = text.find('\\text{')
-            if start == -1:
-                break
-            end = text.find('}', start)
-            if end == -1:
-                break
-            # Replace \text{content} with just content
-            content = text[start + 6:end]  # 6 is length of '\text{'
-            text = text[:start] + content + text[end + 1:]
-    return text
-
-
-def equal_func(answer: str, ground_truth: str) -> bool:
-    """Check if answer equals ground truth"""
-    answer = quick_parse(answer)
-    if len(answer) == 1 and answer.isalpha() and len(ground_truth) == 1 and ground_truth.isalpha():
-        return answer.lower() == ground_truth.lower()
-    else:
-        return math_equal(answer, ground_truth)
-
-
 def evaluate_voting_results(voting_results, ground_truth):
     """Evaluate voting results against ground truth"""
     evaluation = {}
@@ -119,7 +98,7 @@ def evaluate_voting_results(voting_results, ground_truth):
             continue
         if result and result.get('answer'):
             try:
-                is_correct = equal_func(result['answer'], extracted_gt)
+                is_correct = check_correct(result['answer'], extracted_gt)
             except:
                 is_correct = str(result['answer']) == str(ground_truth)
             
@@ -159,7 +138,7 @@ def evaluate_confidence_methods(result, ground_truth):
         
         if warmup_above_threshold:
             correct_above = sum(1 for trace in warmup_above_threshold
-                              if equal_func(trace['extracted_answer'], extracted_gt))
+                              if check_correct(trace['extracted_answer'], extracted_gt))
             confidence_evaluation['warmup_above_threshold'] = {
                 'total': len(warmup_above_threshold),
                 'correct': correct_above,
@@ -176,7 +155,7 @@ def evaluate_confidence_methods(result, ground_truth):
         
         if final_completed:
             correct_final = sum(1 for trace in final_completed
-                              if equal_func(trace['extracted_answer'], extracted_gt))
+                              if check_correct(trace['extracted_answer'], extracted_gt))
             confidence_evaluation['final_completed'] = {
                 'total': len(final_completed),
                 'correct': correct_final,
@@ -192,7 +171,7 @@ def evaluate_confidence_methods(result, ground_truth):
 
         if final_completed_notmaxtokenshit:
             correct_notmax = sum(1 for trace in final_completed_notmaxtokenshit
-                               if equal_func(trace['extracted_answer'], extracted_gt))
+                               if check_correct(trace['extracted_answer'], extracted_gt))
             confidence_evaluation['final_completed_notmaxtokenshit'] = {
                 'total': len(final_completed_notmaxtokenshit),
                 'correct': correct_notmax,
@@ -207,7 +186,7 @@ def evaluate_confidence_methods(result, ground_truth):
         
         if early_stopped:
             correct_stopped = sum(1 for trace in early_stopped
-                                if equal_func(trace['extracted_answer'], extracted_gt))
+                                if check_correct(trace['extracted_answer'], extracted_gt))
             confidence_evaluation['early_stopped'] = {
                 'total': len(early_stopped),
                 'correct': correct_stopped,
@@ -246,7 +225,7 @@ def print_evaluation_report(question, ground_truth, evaluation, confidence_eval,
     extracted_gt = extract_answer(ground_truth) or ground_truth
     correct_traces = sum(1 for trace in result.all_voting_traces
                         if trace.get('extracted_answer') and
-                        equal_func(trace['extracted_answer'], extracted_gt))
+                        check_correct(trace['extracted_answer'], extracted_gt))
     total_valid_traces = sum(1 for trace in result.all_voting_traces if trace.get('extracted_answer'))
     
     if total_valid_traces > 0:

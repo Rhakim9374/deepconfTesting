@@ -57,7 +57,18 @@ DeepSeek `MODEL_PATH` defaults name the linked checkpoint directories of
 ExploreExploitThink's `scripts/fix_tokenizer_class.sh`: under Transformers 5
 the snapshot's declared `LlamaTokenizerFast` strips the prompt's spaces, and
 `DeepThinkLLM` stops at startup unless the engine's tokenizer reproduces the
-model's `tokenizer.json`.
+model's `tokenizer.json`. Answers are graded by `deepconfTesting/grading.py`
+(a verbatim copy of ExploreExploitThink's `src/eet/grading.py`): `equal_func`
+runs in a persistent worker process, `check_correct` memoizes each pair and
+allows a comparison 30 s, and slower comparisons count as not equal and are
+listed per question under `grading_timeouts`. Prompts reach the engine as token
+ids encoded without added special tokens, exactly as ExploreExploitThink sends
+them (the chat template already writes the BOS). Engine statistics are on:
+each question's pkl records `preemptions`, the requests vLLM preempted for lack
+of KV cache (zero means every trace stayed resident), and the job log prints
+vLLM's periodic running/waiting/KV-usage line. `examples/example_offline.py`
+and `examples/example_online_baseline.py` keep their own unchanged copies of
+the original grader and are not used by the submit files.
 
 ## Quick Start
 

@@ -7,6 +7,7 @@ running online-mode deep thinking on each. Designed to be called via
 HTCondor with `queue NUM_RUNS` (one job per run, each processing all questions).
 """
 import argparse
+import glob
 import json
 import os
 import pickle
@@ -15,13 +16,13 @@ from datetime import datetime
 
 from vllm import SamplingParams
 
+from .grading import GRADER, check_correct
 from .utils import READOUT_TOPK
 from .wrapper import DeepThinkLLM
 from examples.example_online import (
     DATASET_TYPES,
     prepare_prompt,
     prepare_prompt_gpt,
-    equal_func,
     evaluate_voting_results,
     evaluate_confidence_methods,
 )
@@ -91,10 +92,20 @@ def asc_evaluation(asc, ground_truth):
         graded[policy] = {
             **stop,
             "fired": bool(asc[policy]) and policy != "full",
-            "majority_correct": bool(stop["majority_answer"]) and equal_func(stop["majority_answer"], ground_truth),
-            "zsoftmax_correct": bool(stop["zsoftmax_answer"]) and equal_func(stop["zsoftmax_answer"], ground_truth),
+            "majority_correct": check_correct(stop["majority_answer"], ground_truth),
+            "zsoftmax_correct": check_correct(stop["zsoftmax_answer"], ground_truth),
         }
     return graded
+
+
+def _loads(path: str) -> bool:
+    """True if ``path`` unpickles (a complete pkl); a truncated one raises."""
+    try:
+        with open(path, "rb") as f:
+            pickle.load(f)
+        return True
+    except Exception:
+        return False
 
 
 def main() -> None:
@@ -144,6 +155,16 @@ def main() -> None:
     summary_results = []
 
     for qid in range(qid_start, qid_end):
+        # Resume: a held-and-released HTCondor job, or one resubmitted with
+        # the same RID, restarts this script under its rid, so a loadable
+        # question pkl of this rid means the question is done. A pkl that
+        # fails to load was cut off mid-write by the kill and is redone.
+        done = [q for q in glob.glob(os.path.join(
+            args.output_dir, f"deepthink_online_qid{qid}_rid{args.run_id}_*.pkl"))
+            if _loads(q)]
+        if done:
+            print(f"[qid={qid}] already done by this rid ({os.path.basename(done[0])}), skipping")
+            continue
         question_data = data[qid]
         question = question_data["question"]
         ground_truth = str(question_data.get("answer", "")).strip()
@@ -162,6 +183,7 @@ def main() -> None:
                                      dataset_type=args.dataset_type)
 
         # Run online deep thinking
+        preempted = deep_llm.preemptions()
         q_start = time.time()
         result = deep_llm.deepthink(
             prompt=prompt,
@@ -174,6 +196,10 @@ def main() -> None:
             sampling_params=sampling_params,
         )
         q_elapsed = time.time() - q_start
+        preemptions = deep_llm.preemptions() - preempted
+        if preemptions:
+            print(f"  vLLM preempted {preemptions} requests (KV cache full)")
+        timeouts_before = len(GRADER.timed_out)
 
         # Evaluate
         evaluation = None
@@ -210,6 +236,12 @@ def main() -> None:
                 "evaluation": evaluation,
                 "confidence_evaluation": confidence_eval,
                 "asc_evaluation": asc_eval,
+                # (answer, ground truth) pairs whose comparison hit the
+                # grading time limit and counted as not equal (grading.py)
+                "grading_timeouts": GRADER.timed_out[timeouts_before:],
+                # Requests the engine preempted during this question; zero
+                # means every trace of both phases ran in parallel throughout.
+                "preemptions": preemptions,
             }
         )
 
