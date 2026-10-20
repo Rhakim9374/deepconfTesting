@@ -66,7 +66,12 @@ ids encoded without added special tokens, exactly as ExploreExploitThink sends
 them (the chat template already writes the BOS). Engine statistics are on:
 each question's pkl records `preemptions`, the requests vLLM preempted for lack
 of KV cache (zero means every trace stayed resident), and the job log prints
-vLLM's periodic running/waiting/KV-usage line. `examples/example_offline.py`
+vLLM's periodic running/waiting/KV-usage line. vLLM re-adds a preempted
+request to its batch when it resumes, which asks for a new per-request logits
+processor; `processors.WrappedPerReqLogitsProcessor` returns the one kept in
+the request's `extra_args`, so the gate's 2,048-token window continues across
+the preemption rather than restarting empty (which let traces run past their
+first window below the threshold). `examples/example_offline.py`
 and `examples/example_online_baseline.py` keep their own unchanged copies of
 the original grader and are not used by the submit files.
 
