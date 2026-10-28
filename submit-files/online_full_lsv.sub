@@ -15,10 +15,11 @@
 # (16, 64): DeepConf's own 16 warm-up traces wherever the budget exceeds
 # them, half the budget below 32. The paper's runs are the nodes of
 # ExploreExploitThink's scripts/campaign_dag.sh (DeepSeek and Gemma on one
-# GPU, 2 CPUs, 64G; Muse at TENSOR_PARALLEL = 4, 8 CPUs, 128G). It runs each point once, for its
-# time; its accuracy and tokens replay the same rule on ExploreExploitThink's
-# full-parallel pool. At BUDGET = 64 also -a 'request_memory = 64G' (the
-# runner keeps vLLM's logprob dicts of a whole batch).
+# GPU, 2 CPUs, 64G; Muse's on an LST H100 through online_full_lst.sub).
+# It runs each point once, for its time; its accuracy and tokens replay
+# the same rule on ExploreExploitThink's full-parallel pool. At BUDGET = 64
+# also -a 'request_memory = 64G' (the runner keeps vLLM's logprob dicts of
+# a whole batch).
 #
 # The dataset is read from the ExploreExploitThink checkout on purpose:
 # deepconfTesting/data/ is gitignored, and pointing both methods at the

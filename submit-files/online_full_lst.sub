@@ -11,9 +11,10 @@
 #       projects/deepconfTesting/submit-files/online_full_lst.sub
 # The budget points are (WARMUP, BUDGET) = (2, 4), (4, 8), (8, 16), (16, 32),
 # (16, 64): DeepConf's own 16 warm-up traces wherever the budget exceeds
-# them, half the budget below 32. The paper runs each point once, for its
-# time; its accuracy and tokens replay the same rule on ExploreExploitThink's
-# full-parallel pool.
+# them, half the budget below 32. The paper's Muse runs are the jobs that
+# ExploreExploitThink's scripts/campaign_dag.sh prints (128G). It runs each point
+# once, for its time; its accuracy and tokens replay the same rule on
+# ExploreExploitThink's full-parallel pool.
 #
 # The dataset is read from the ExploreExploitThink checkout on purpose:
 # deepconfTesting/data/ is gitignored, and pointing both methods at the
@@ -52,6 +53,8 @@ PERCENTILE              = 10
 QSTART                  = 0
 QEND                    = 999999
 K                       = 1
+# Run id; a fixed RID lets a resubmitted job resume the same run.
+RID                     = run_$(ClusterId)_$(Process)
 # vLLM 0.28 venv of the paper's runs (scripts/setup_vllm_env.sh in
 # ExploreExploitThink); the thesis runs used
 # /nethome/rhakim/envs/gemma4Env
@@ -69,7 +72,7 @@ MAX_TOKENS              = 64000
 TAG                     = DS
 # _V028: runs on the vLLM 0.28 venv never pool with the thesis's *_T07 dirs
 TSUF                    = T07_V028
-environment             = "RUN_ID=run_$(ClusterId)_$(Process) CONDOR_PROCESS=$(Process) CONDA_ENV=$(CONDA_ENV) VLLM_USE_FLASHINFER_SAMPLER=0 VLLM_USE_DEEP_GEMM=0 VLLM_USE_V2_MODEL_RUNNER=0 TENSOR_PARALLEL=$(TENSOR_PARALLEL) WARMUP_TRACES=$(WARMUP) TOTAL_BUDGET=$(BUDGET) CONFIDENCE_PERCENTILE=$(PERCENTILE) WINDOW_SIZE=2048 MAX_TOKENS=$(MAX_TOKENS) MODEL_TYPE=$(MODEL_TYPE) DATASET_TYPE=$(DTYPE) TEMPERATURE=$(TEMPERATURE) TOP_P=$(TOP_P) TOP_K=$(TOP_K) QID_START=$(QSTART) QID_END=$(QEND) MODEL_PATH=$(MODEL_PATH) DATASET_PATH=/nethome/rhakim/projects/ExploreExploitThink/data/$(DATASET).jsonl OUTPUT_DIR=/scratch/rhakim/logs/deepconfTesting/$(TAG)_DEEPCONF_W$(WARMUP)_B$(BUDGET)_P$(PERCENTILE)_$(TSUF)/$(DATASET)"
+environment             = "RUN_ID=$(RID) CONDOR_PROCESS=$(Process) CONDA_ENV=$(CONDA_ENV) VLLM_USE_FLASHINFER_SAMPLER=0 VLLM_USE_DEEP_GEMM=0 VLLM_USE_V2_MODEL_RUNNER=0 TENSOR_PARALLEL=$(TENSOR_PARALLEL) WARMUP_TRACES=$(WARMUP) TOTAL_BUDGET=$(BUDGET) CONFIDENCE_PERCENTILE=$(PERCENTILE) WINDOW_SIZE=2048 MAX_TOKENS=$(MAX_TOKENS) MODEL_TYPE=$(MODEL_TYPE) DATASET_TYPE=$(DTYPE) TEMPERATURE=$(TEMPERATURE) TOP_P=$(TOP_P) TOP_K=$(TOP_K) QID_START=$(QSTART) QID_END=$(QEND) MODEL_PATH=$(MODEL_PATH) DATASET_PATH=/nethome/rhakim/projects/ExploreExploitThink/data/$(DATASET).jsonl OUTPUT_DIR=/scratch/rhakim/logs/deepconfTesting/$(TAG)_DEEPCONF_W$(WARMUP)_B$(BUDGET)_P$(PERCENTILE)_$(TSUF)/$(DATASET)"
 initialdir              = /nethome/rhakim
 executable              = /nethome/rhakim/projects/deepconfTesting/scripts/online_full_run.sh
 output                  = /scratch/rhakim/logs/deepconfTesting/logfiles/online_full.$(ClusterId).$(Process).$(Year)_$(Month)_$(Day)_$(SUBMIT_TIME).out
