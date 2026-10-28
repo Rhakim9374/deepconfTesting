@@ -43,11 +43,17 @@ def extract_answer(text: str) -> Optional[str]:
 # ConfPerReqLogitsProcessor). READOUT_TOPK is ExploreExploitThink's
 # branch_scoring_metric_k and is used ONLY by the eet_voting read-outs, so
 # both methods weight their votes by the identical scalar. The sampling
-# params therefore request READOUT_TOPK logprobs and each consumer slices
-# the width it wants -- with top_k = DEEPCONF_TOPK sampling the top-20 set
-# is unchanged by the wider request, so DeepConf's own numbers do not move.
+# params therefore request at least READOUT_TOPK logprobs and each consumer
+# sorts and slices the width it wants, so a wider request moves no number.
 DEEPCONF_TOPK = 20
 READOUT_TOPK = 32
+
+
+def fetch_width(top_k: int) -> int:
+    """Logprobs requested per token: ExploreExploitThink's fetch width
+    (its read-out width widened to the sampling top_k), so both runners
+    read the same number per token for a given model."""
+    return max(READOUT_TOPK, top_k)
 
 
 def compute_confidence(logprobs: List[Dict], k: int = DEEPCONF_TOPK) -> List[float]:

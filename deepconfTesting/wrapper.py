@@ -113,8 +113,8 @@ class DeepThinkLLM:
             "enable_prefix_caching": True,
             "trust_remote_code": True,
             # vLLM caps per-request logprobs at max_logprobs (default 20) and
-            # raises VLLMValidationError above it, so the READOUT_TOPK-wide
-            # request the eet_voting read-out needs has to be unlocked here.
+            # raises VLLMValidationError above it, so the read-out request
+            # has to be unlocked here; main.py passes utils.fetch_width.
             # ExploreExploitThink does the same in src/experiment.py.
             "max_logprobs": READOUT_TOPK,
             # Record raw log-softmax regardless of the request's
@@ -356,7 +356,6 @@ class DeepThinkLLM:
         for param_id in range(warmup_traces):
             warmup_params = copy.deepcopy(sampling_params)
             warmup_params.n = 1
-            warmup_params.logprobs = READOUT_TOPK
             warmup_params.seed = base_seed + param_id
             warmup_params_list.append(warmup_params)
         warmup_outputs = self.generate_observed([prompt for _ in range(warmup_traces)], warmup_params_list)
@@ -399,7 +398,6 @@ class DeepThinkLLM:
         for param_id in range(total_budget - warmup_traces):
             final_params = copy.deepcopy(sampling_params)
             final_params.n = 1
-            final_params.logprobs = READOUT_TOPK
             final_params.seed = base_seed + param_id + warmup_traces
             final_params.extra_args = {
                 "conf_threshold": output.conf_bar,
@@ -475,7 +473,6 @@ class DeepThinkLLM:
         for param_id in range(budget):
             sampling_params_x = copy.deepcopy(sampling_params)
             sampling_params_x.n = 1
-            sampling_params_x.logprobs = READOUT_TOPK
             sampling_params_x.seed = base_seed + param_id
             sampling_params_list.append(sampling_params_x)
 

@@ -17,7 +17,7 @@ from datetime import datetime
 from vllm import SamplingParams
 
 from .grading import GRADER, check_correct
-from .utils import READOUT_TOPK
+from .utils import fetch_width
 from .wrapper import DeepThinkLLM
 from examples.example_online import (
     DATASET_TYPES,
@@ -136,6 +136,7 @@ def main() -> None:
         # The cap plus 2,048 prompt tokens, as in ExploreExploitThink's
         # src/experiment.py, rather than the model's full context.
         max_model_len=args.max_tokens + 2048,
+        max_logprobs=fetch_width(args.top_k),
     )
     print(f"Model loaded in {time.time() - t0:.1f}s")
 
@@ -144,9 +145,9 @@ def main() -> None:
         top_p=args.top_p,
         top_k=args.top_k,
         max_tokens=args.max_tokens,
-        # Wide enough for the ExploreExploitThink read-out; DeepConf's own
-        # confidence still slices its published top-20 (utils.DEEPCONF_TOPK).
-        logprobs=READOUT_TOPK,
+        # ExploreExploitThink's fetch width; DeepConf's own confidence still
+        # slices its published top-20 (utils.DEEPCONF_TOPK).
+        logprobs=fetch_width(args.top_k),
     )
 
     os.makedirs(args.output_dir, exist_ok=True)
